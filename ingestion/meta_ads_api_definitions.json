@@ -1,0 +1,74 @@
+[
+  {
+    "name": "Meta Ads API — Get Ad Account Insights",
+    "category": "Meta Ads",
+    "endpoint": "GET /v23.0/{ad-account-id}/insights",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "Returns aggregated performance metrics for an ad account across all campaigns, ad sets, and ads. Key fields available via the 'fields' parameter: impressions, clicks, spend, reach, cpm, cpc, ctr, actions (includes purchase, add_to_cart, lead, etc.), action_values (revenue attributed to each action type), roas (return on ad spend), frequency, unique_clicks, cost_per_action_type. The 'date_preset' parameter supports last_7d, last_30d, last_90d, this_month, last_month, lifetime. For custom ranges use time_range={since,until}. The 'level' parameter (ad, adset, campaign, account) controls aggregation. Breakdown dimensions: age, gender, placement, region, country, device_platform, publisher_platform, impression_device. Attribution windows are controlled by the 'action_attribution_windows' parameter (e.g. ['1d_click', '7d_click', '1d_view']).",
+    "plain_explanation": "This is the core Meta Ads API endpoint for building a campaign performance dashboard. It returns all the key advertising metrics — impressions, clicks, spend, conversions, and revenue — for the entire ad account. You specify which metrics you want, the date range, and how to break down the data (by campaign, age group, country, etc.)."
+  },
+  {
+    "name": "Meta Ads API — Get Campaign Insights",
+    "category": "Meta Ads",
+    "endpoint": "GET /v23.0/{campaign-id}/insights",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "Returns performance metrics for a specific campaign. Same fields and parameters as the account-level insights endpoint but scoped to a single campaign. Supports the 'level' parameter to further break down by adset or ad within the campaign. For paginated results across many campaigns, use the ad account insights endpoint with level=campaign instead of calling individual campaign insights. The 'async' parameter can be set to true for large data requests — returns an async job ID to poll for completion.",
+    "plain_explanation": "Returns performance data (impressions, spend, conversions, ROAS) for a single Meta campaign. Use this when you want to drill into one campaign's performance. For pulling all campaigns at once, use the ad account insights endpoint with level=campaign instead."
+  },
+  {
+    "name": "Meta Ads API — List Campaigns",
+    "category": "Meta Ads",
+    "endpoint": "GET /v23.0/{ad-account-id}/campaigns",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "Returns all campaigns for an ad account with their metadata. Available fields: id, name, status, objective (OUTCOME_AWARENESS, OUTCOME_TRAFFIC, OUTCOME_ENGAGEMENT, OUTCOME_LEADS, OUTCOME_APP_PROMOTION, OUTCOME_SALES), budget_remaining, daily_budget, lifetime_budget, start_time, stop_time, created_time, updated_time, special_ad_categories. Use the 'effective_status' filter parameter to get only ACTIVE, PAUSED, or ARCHIVED campaigns. Supports pagination via the cursor-based paging in the response. Typical use in ETL: pull campaign metadata to join with insights data.",
+    "plain_explanation": "Lists all advertising campaigns in the ad account with their names, status, objectives, and budget details. Use this to build a campaign metadata table in the data warehouse that can be joined with performance metrics data from the insights endpoint."
+  },
+  {
+    "name": "Meta Ads API — List Ad Sets",
+    "category": "Meta Ads",
+    "endpoint": "GET /v23.0/{ad-account-id}/adsets",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "Returns all ad sets for an ad account, including audience targeting, placement, schedule, and budget configuration. Key fields: id, name, campaign_id, status, targeting (age_min, age_max, genders, geo_locations, interests, custom_audiences), optimization_goal, billing_event, daily_budget, lifetime_budget, bid_amount, start_time, end_time. The targeting object contains the full audience definition. Use adset-level breakdowns in the insights endpoint to understand performance differences by audience segment.",
+    "plain_explanation": "Lists all ad sets, which define who sees the ads (the audience targeting) and how much is spent. Returns the audience definition including age, gender, location, and interest targeting. Useful for auditing audience overlap and joining to insights data for audience-level performance analysis."
+  },
+  {
+    "name": "Meta Ads API — List Ads",
+    "category": "Meta Ads",
+    "endpoint": "GET /v23.0/{ad-account-id}/ads",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "Returns all ads for an ad account including their creative references and tracking configuration. Key fields: id, name, adset_id, campaign_id, status, creative (contains creative_id, thumbnail_url), tracking_specs (event types tracked), conversion_specs, created_time, updated_time. To get the actual ad copy, image, and video, use the creative_id to query the adcreatives endpoint separately. Supports filtering by effective_status. Part of the three-level Meta Ads hierarchy: campaign > adset > ad.",
+    "plain_explanation": "Lists all individual ads in the account. Each ad has a name, its parent campaign/adset, and a reference to the creative (the image, video, and copy). Use this for creative-level performance analysis — to see which ad visuals and copy are driving the best results."
+  },
+  {
+    "name": "Meta Ads API — Attribution Window Settings",
+    "category": "Meta Ads",
+    "endpoint": "parameter reference — used in insights requests",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "Meta Ads measures conversions using attribution windows that define how long after an ad interaction a conversion is counted. Available windows controlled by the 'action_attribution_windows' parameter in insights requests: '1d_click' (conversion within 1 day of click), '7d_click' (within 7 days of click, default for purchases), '28d_click' (28 days, deprecated for data use), '1d_view' (within 1 day of impression, default for view-through), '7d_view'. Default window when not specified: 7-day click + 1-day view. Meta uses last-touch attribution within the attribution window — if a user clicks multiple Meta ads, the most recent gets credit. This differs from GA4's session-based attribution and causes systematic over-reporting of conversions vs GA4.",
+    "plain_explanation": "Explains how Meta Ads decides which ad gets credit for a sale. By default, Meta counts a purchase as a conversion if the customer clicked an ad in the last 7 days OR viewed an ad in the last 1 day. This is much wider than what GA4 measures (which only counts the session where the purchase happened), which is the main reason Meta Ads often reports far more conversions than GA4."
+  },
+  {
+    "name": "Meta Ads API — Async Insights Jobs",
+    "category": "Meta Ads",
+    "endpoint": "POST /v23.0/{ad-account-id}/insights (async=true)",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "For large data requests (large date ranges, many breakdowns, account with thousands of ads), use async=true to create an async insights job. The response returns a report_run_id. Poll GET /v23.0/{report-run-id} until async_status is 'Job Completed', then fetch results from the report_run_id cursor. Async jobs expire after 60 days. Required for accounts with more than 10,000 ads or reports spanning more than 90 days. The async approach is mandatory for production ETL pipelines that pull historical data.",
+    "plain_explanation": "For large ad accounts or long date ranges, Meta requires you to submit a data request and wait for it to complete rather than getting data immediately. This is the correct approach for production data pipelines — submit the job, wait for it to finish (usually a few minutes), then download the results."
+  },
+  {
+    "name": "Meta Ads API — Incremental Data Pull Strategy",
+    "category": "Meta Ads",
+    "endpoint": "parameter reference — time_range and date_preset",
+    "base_url": "https://graph.facebook.com",
+    "auth": "User access token or System User access token with ads_read permission",
+    "description": "Meta Ads data is subject to a 28-day attribution lookback window, which means historical data can change retroactively as delayed conversions are attributed. Best practice for incremental ETL: pull the last 28 days of data daily and upsert (replace) existing rows by date in the data warehouse. Do not use append-only inserts for Meta Ads data. Use time_range={since: 'YYYY-MM-DD', until: 'YYYY-MM-DD'} with day-level breakdown (time_increment=1) for daily granularity. Data for the current day is partial and should not be loaded into the warehouse until the next day's pull. Meta data is typically available with a 3-hour delay for standard metrics and up to 72 hours for view-through conversion attribution.",
+    "plain_explanation": "Because Meta can retroactively attribute conversions for up to 28 days after an ad click, old data keeps changing. The correct pipeline strategy is to re-pull and overwrite the last 28 days of data every day, not just pull new days. This ensures your warehouse always has the final, accurate conversion numbers — not preliminary figures that change later."
+  }
+]

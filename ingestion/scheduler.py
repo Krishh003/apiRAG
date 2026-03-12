@@ -3,8 +3,9 @@ Ingestion Scheduler — orchestrates the full ingestion pipeline.
 
 Runs:
   1. OpenAPI parser  (Twilio, SendGrid, Stripe, Google Maps)
-  2. Playwright scraper (WhatsApp, Meta, Instagram)
-  3. Structuring/enrichment via Gemini Flash
+  2. Curated JSON definitions (WhatsApp/Meta/Instagram, GA4, Meta Ads,
+     Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase)
+  3. Structuring/enrichment via Gemini Flash (OpenAPI entries only)
   4. Push to ChromaDB (vector store)
   5. Push to Neo4j (graph store)
 
@@ -36,6 +37,52 @@ scrape_status: Dict[str, Any] = {
     "is_running": False,
 }
 
+# All curated JSON definition files and the platforms they cover
+JSON_DEFINITION_FILES = [
+    {
+        "filename": "meta_api_definitions.json",
+        "platforms": {"WhatsApp", "Meta", "Instagram"},
+        "default_base_url": "https://graph.facebook.com",
+        "default_auth": "Bearer token",
+    },
+    {
+        "filename": "ga4_api_definitions.json",
+        "platforms": {"GA4"},
+        "default_base_url": "https://analyticsdata.googleapis.com",
+        "default_auth": "OAuth 2.0 Service Account",
+    },
+    {
+        "filename": "meta_ads_api_definitions.json",
+        "platforms": {"Meta Ads"},
+        "default_base_url": "https://graph.facebook.com",
+        "default_auth": "System User access token with ads_read permission",
+    },
+    {
+        "filename": "meta_pixel_capi_definitions.json",
+        "platforms": {"Meta Pixel"},
+        "default_base_url": "https://graph.facebook.com",
+        "default_auth": "Meta Pixel ID / System User access token",
+    },
+    {
+        "filename": "shopify_api_definitions.json",
+        "platforms": {"Shopify"},
+        "default_base_url": "https://{store-name}.myshopify.com",
+        "default_auth": "Admin API access token in X-Shopify-Access-Token header",
+    },
+    {
+        "filename": "appsflyer_api_definitions.json",
+        "platforms": {"AppsFlyer"},
+        "default_base_url": "https://hq1.appsflyer.com",
+        "default_auth": "API V2 token in Authorization header",
+    },
+    {
+        "filename": "firebase_api_definitions.json",
+        "platforms": {"Firebase"},
+        "default_base_url": "https://firebase.google.com",
+        "default_auth": "Firebase App credentials",
+    },
+]
+
 
 class IngestionScheduler:
 
@@ -52,7 +99,7 @@ class IngestionScheduler:
     def run_ingestion(self, platforms: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Full ingestion pipeline. Callable directly for manual runs.
-        platforms=None means scrape ALL platforms.
+        platforms=None means load ALL platforms.
         """
         global scrape_status
         if scrape_status["is_running"]:
@@ -83,18 +130,23 @@ class IngestionScheduler:
                 counts["openapi"] = len(openapi_entries)
                 logger.info(f"OpenAPI ingestion complete: {len(openapi_entries)} entries")
 
-            # ── Step 2: Meta platforms (WhatsApp, Meta, Instagram) ──────────
-            #   Meta's developer site blocks headless browsers entirely,
-            #   so we load curated API definitions from a local JSON file.
-            meta_platforms = {"WhatsApp", "Meta", "Instagram"}
-            should_load_meta = not platforms or any(p in meta_platforms for p in platforms)
+            # ── Step 2: Curated JSON definition files ─────────────────────────
+            #   Covers: WhatsApp/Meta/Instagram, GA4, Meta Ads, Meta Pixel/CAPI,
+            #           Shopify, AppsFlyer, Firebase
+            for file_config in JSON_DEFINITION_FILES:
+                file_platforms = file_config["platforms"]
+                should_load = not platforms or any(p in file_platforms for p in platforms)
 
-            if should_load_meta:
-                logger.info("Loading Meta/WhatsApp/Instagram API definitions from JSON...")
-                meta_entries = self._load_meta_definitions(platforms)
-                all_entries.extend(meta_entries)
-                counts["meta_json"] = len(meta_entries)
-                logger.info(f"Meta JSON ingestion complete: {len(meta_entries)} entries")
+                if should_load:
+                    entries = self._load_json_definitions(
+                        filename=file_config["filename"],
+                        platforms=platforms,
+                        default_base_url=file_config["default_base_url"],
+                        default_auth=file_config["default_auth"],
+                    )
+                    all_entries.extend(entries)
+                    key = file_config["filename"].replace(".json", "")
+                    counts[key] = len(entries)
 
             # ── Step 3: Push to ChromaDB ───────────────────────────────────────
             logger.info(f"Pushing {len(all_entries)} entries to ChromaDB...")
@@ -132,51 +184,66 @@ class IngestionScheduler:
             logger.error(f"Failed to ingest internal API: {e}")
             return False
 
-    def _load_meta_definitions(self, platforms: Optional[List[str]] = None) -> List[APIEntry]:
+    def _load_json_definitions(
+        self,
+        filename: str,
+        platforms: Optional[List[str]] = None,
+        default_base_url: str = "",
+        default_auth: str = "See documentation",
+    ) -> List[APIEntry]:
         """
-        Load WhatsApp/Meta/Instagram API definitions from a curated JSON file.
-        Meta's developer docs block headless browsers entirely, so we maintain
-        hand-curated definitions in ingestion/meta_api_definitions.json.
+        Generic loader for curated API definition JSON files.
+
+        Each JSON file is a list of objects with fields:
+          name, category (used as platform), endpoint, description,
+          plain_explanation, base_url (optional), auth (optional),
+          doc_url (optional)
+
+        The 'category' field in the JSON determines both the platform and
+        category fields on the resulting APIEntry.
         """
-        json_path = os.path.join(os.path.dirname(__file__), "meta_api_definitions.json")
+        json_path = os.path.join(os.path.dirname(__file__), filename)
         if not os.path.exists(json_path):
-            logger.warning(f"Meta definitions file not found: {json_path}")
+            logger.warning(f"Definitions file not found: {json_path}")
             return []
 
         with open(json_path, "r", encoding="utf-8") as f:
             raw_entries = json.load(f)
 
-        # Map "category" field from JSON to "platform" for APIEntry
-        meta_platform_map = {
-            "WhatsApp": "WhatsApp",
-            "Meta": "Meta",
-            "Instagram": "Instagram",
-        }
-
         entries = []
         for obj in raw_entries:
-            # Determine the platform from the category field
             raw_category = obj.get("category", "")
-            platform = meta_platform_map.get(raw_category, raw_category)
+            platform = raw_category  # category IS the platform for curated JSON files
 
             # Filter by requested platforms if specified
             if platforms and platform not in platforms:
                 continue
 
+            # Parse method from endpoint string (e.g. "POST /v1/..." → "POST", "/v1/...")
+            endpoint_str = obj.get("endpoint", "")
+            parts = endpoint_str.split(None, 1)
+            if len(parts) == 2 and parts[0].upper() in ("GET", "POST", "PUT", "PATCH", "DELETE"):
+                method = parts[0].upper()
+                endpoint_path = parts[1]
+            else:
+                method = "GET"
+                endpoint_path = endpoint_str
+
             entry = APIEntry(
                 name=obj.get("name", "Unknown"),
                 platform=platform,
                 category=raw_category,
-                method=obj.get("endpoint", "GET").split()[0] if obj.get("endpoint") else "GET",
-                endpoint=obj.get("endpoint", ""),
-                base_url=obj.get("base_url", "https://graph.facebook.com"),
-                auth=obj.get("auth", "Bearer token"),
+                method=method,
+                endpoint=endpoint_path,
+                base_url=obj.get("base_url", default_base_url),
+                auth=obj.get("auth", default_auth),
                 description=obj.get("description", ""),
                 plain_explanation=obj.get("plain_explanation", ""),
+                doc_url=obj.get("doc_url", ""),
             )
             entries.append(entry)
 
-        logger.info(f"Loaded {len(entries)} Meta API definitions from JSON")
+        logger.info(f"Loaded {len(entries)} entries from {filename}")
         return entries
 
     def run_single_url_ingestion(self, url: str, platform: str, category: str) -> Dict[str, Any]:

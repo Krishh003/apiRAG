@@ -1,0 +1,56 @@
+[
+  {
+    "name": "Firebase Analytics — Auto-Collected Events Reference",
+    "category": "Firebase",
+    "endpoint": "client-side SDK — logged automatically by Firebase SDK",
+    "base_url": "https://firebase.google.com/docs/analytics/events",
+    "auth": "Firebase App (google-services.json for Android, GoogleService-Info.plist for iOS)",
+    "description": "Firebase Analytics automatically collects a set of events without any code required. Key auto-collected events: first_open (first time user opens the app after install or reinstall), app_remove (app uninstalled from Android only), session_start (when user engages for more than 10 seconds or fires more than 1 event), user_engagement (when app is in the foreground, fires every 60 seconds), os_update (device OS updated), app_update (app updated to new version), ad_impression (when an AdMob ad is shown), notification_open (push notification opened). These events are available in GA4 reports automatically once Firebase is linked to a GA4 property. Auto-collected events cannot be disabled individually except ad_impression.",
+    "plain_explanation": "These events are automatically tracked by the Firebase SDK without writing any code — useful baseline metrics like first app open, session starts, and user engagement time. Linking Firebase to GA4 makes these available in GA4 reports. They provide the baseline funnel data before any custom event instrumentation."
+  },
+  {
+    "name": "Firebase Analytics — Recommended Ecommerce Events",
+    "category": "Firebase",
+    "endpoint": "client-side SDK — FirebaseAnalytics.logEvent()",
+    "base_url": "https://firebase.google.com/docs/analytics/measure-ecommerce",
+    "auth": "Firebase App (google-services.json / GoogleService-Info.plist)",
+    "description": "Firebase Analytics uses the same recommended ecommerce event names as GA4 for consistency. Events must be logged with FirebaseAnalytics.logEvent(). Required ecommerce events and their parameters: view_item_list (items array, item_list_id, item_list_name), view_item (items, currency, value), add_to_cart (items, currency, value), remove_from_cart (items, currency, value), view_cart (items, currency, value), begin_checkout (items, currency, value, coupon), add_payment_info (items, currency, value, payment_type), add_shipping_info (items, currency, value, shipping_tier), purchase (transaction_id — required, items, currency, value, tax, shipping, coupon, affiliation). The items array objects require: item_id, item_name — all other fields (price, quantity, item_category, item_brand) are optional but recommended. Firebase event names are limited to 40 characters, parameter names to 40 characters, string parameter values to 100 characters.",
+    "plain_explanation": "These are the exact event names and parameters that must be logged in the iOS and Android app code to track the ecommerce funnel in Firebase/GA4. They match the GA4 web ecommerce events exactly — so the same reports and funnels work for both the app and the website. The purchase event with transaction_id is mandatory and must fire only once per completed order."
+  },
+  {
+    "name": "Firebase Analytics — Custom Event Logging",
+    "category": "Firebase",
+    "endpoint": "client-side SDK — FirebaseAnalytics.logEvent(eventName, parameters)",
+    "base_url": "https://firebase.google.com/docs/analytics/events",
+    "auth": "Firebase App (google-services.json / GoogleService-Info.plist)",
+    "description": "Logs a custom event with optional parameters. Event names must be 1-40 characters, start with a letter, contain only letters/numbers/underscores, and cannot use reserved prefixes (firebase_, google_, ga_). Each event can have up to 25 custom parameters. Parameter names: 1-40 characters, same character rules. Parameter values: string (max 100 chars) or numeric (long or double). Custom events appear in the GA4 Events report and can be marked as conversions in the GA4 interface. Custom parameters beyond the standard GA4 parameter set require registering them as custom dimensions/metrics in the GA4 interface before they appear in reports. Registering is done in GA4 Admin > Custom definitions > Create custom dimension/metric using the exact parameter name.",
+    "plain_explanation": "Logs any custom action you want to track — like a feature use, a content share, or a specific form submission. The event shows up in GA4 reports automatically. However, if you want to see custom parameters (beyond value and currency) in GA4 reports, you first need to register them as custom dimensions in the GA4 admin settings using the exact same parameter name."
+  },
+  {
+    "name": "Firebase Analytics — User Properties",
+    "category": "Firebase",
+    "endpoint": "client-side SDK — FirebaseAnalytics.setUserProperty(name, value)",
+    "base_url": "https://firebase.google.com/docs/analytics/user-properties",
+    "auth": "Firebase App (google-services.json / GoogleService-Info.plist)",
+    "description": "Sets a user-scoped attribute that persists across all subsequent events from that user. User properties are used for audience segmentation and dimension breakdowns in reports. Examples: subscription_tier ('free', 'premium'), customer_segment ('new', 'returning', 'vip'), preferred_language, app_version_preference. Maximum 25 custom user properties per app. Property names: 1-24 characters. Values: string, max 36 characters. User properties must be registered in the GA4 Admin > Custom definitions interface before they appear in reports and audiences. They persist until explicitly changed by another setUserProperty call or until the app is uninstalled. Used in GA4 to create segments like 'premium users' and compare behaviour between user groups.",
+    "plain_explanation": "Stores a label against a user that persists across all their future app activity — like tagging them as a 'premium subscriber' or 'returning customer'. Once set, this label appears on every event the user fires and can be used to filter or segment GA4 reports and create remarketing audiences (e.g. 'show this ad only to free-tier users')."
+  },
+  {
+    "name": "Firebase Analytics — Firebase to GA4 Event Mapping",
+    "category": "Firebase",
+    "endpoint": "conceptual reference — Firebase SDK to GA4 property linking",
+    "base_url": "https://firebase.google.com/docs/analytics/configure-data-collection",
+    "auth": "Firebase project linked to GA4 property",
+    "description": "When a Firebase project is linked to a GA4 property, all Firebase Analytics events automatically flow into GA4 as GA4 events. The mapping is direct: Firebase event names and parameters become GA4 event names and parameters without transformation. Firebase auto-collected events (first_open, session_start, user_engagement) appear in GA4 automatically. Custom Firebase events appear in the GA4 Events report. The Firebase event stream provides app data while the website gtag or GTM data stream provides web data — both appear in the same GA4 property allowing cross-platform analysis. Key difference: Firebase uses a different user identifier (app_instance_id) than web GA4 (client_id). Cross-device user stitching requires setting the same user_id via FirebaseAnalytics.setUserId() and analytics.set('user_id', ...) on web.",
+    "plain_explanation": "When Firebase is connected to GA4, all app events automatically appear in GA4 reports alongside website events. This allows comparing app and web user behaviour in one place. However, unless users are logged in and we set the same user ID in both the app and website tracking, GA4 cannot connect the same person's app and web activity — they appear as separate anonymous users."
+  },
+  {
+    "name": "Firebase Analytics — GTM Firebase Tag Configuration",
+    "category": "Firebase",
+    "endpoint": "configuration reference — Google Tag Manager for Firebase (GTM4F)",
+    "base_url": "https://developers.google.com/tag-platform/tag-manager/firebase",
+    "auth": "GTM container ID + Firebase App",
+    "description": "Google Tag Manager for Firebase (also called GTM4F or Firebase Tag Manager) allows managing Firebase Analytics event triggers and parameters without app code releases. Requires: (1) Firebase SDK installed in the app, (2) GTM SDK for iOS/Android added as a dependency, (3) GTM container file downloaded and bundled with the app. Tags in the GTM container use Firebase Analytics tag type to call FirebaseAnalytics.logEvent(). Triggers use Data Layer push events from app code or Firebase auto-events. Limitations: GTM4F cannot trigger on all Firebase auto-collected events; custom events still require a DataLayer.push() call from app code. Container updates are downloaded from GTM servers and cached — changes can take up to 12 hours to reach all users.",
+    "plain_explanation": "GTM for Firebase lets the marketing/analytics team update what events are tracked in the mobile app without needing an app release — similar to how GTM works on websites. The developer adds the GTM SDK once, and then event tracking rules can be changed in the GTM interface. Changes are downloaded by the app in the background but can take up to 12 hours to reach all users."
+  }
+]

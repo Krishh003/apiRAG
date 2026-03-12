@@ -31,6 +31,7 @@ reranker = None
 classifier = None
 lookup_handler = None
 planning_handler = None
+advisory_handler = None
 scheduler = None
 
 
@@ -38,7 +39,7 @@ scheduler = None
 async def lifespan(app: FastAPI):
     """Initialize all components on startup."""
     global vector_store, graph_store, reranker, classifier
-    global lookup_handler, planning_handler, scheduler
+    global lookup_handler, planning_handler, advisory_handler, scheduler
 
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
@@ -71,6 +72,10 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing planning handler...")
     from query.planning_handler import PlanningHandler
     planning_handler = PlanningHandler(vector_store, graph_store, reranker, gemini_key)
+
+    logger.info("Initializing advisory handler...")
+    from query.advisory_handler import AdvisoryHandler
+    advisory_handler = AdvisoryHandler(vector_store, reranker, gemini_key)
 
     logger.info("Initializing ingestion scheduler...")
     from ingestion.scheduler import IngestionScheduler
@@ -141,6 +146,12 @@ async def query(req: QueryRequest):
 
     if query_type == "planning":
         result = planning_handler.handle(
+            req.question,
+            platform_filter=req.platform_filter,
+            category_filter=req.category_filter,
+        )
+    elif query_type == "advisory":
+        result = advisory_handler.handle(
             req.question,
             platform_filter=req.platform_filter,
             category_filter=req.category_filter,

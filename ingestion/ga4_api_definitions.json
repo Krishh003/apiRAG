@@ -1,0 +1,83 @@
+[
+  {
+    "name": "GA4 Data API — Run Report",
+    "category": "GA4",
+    "endpoint": "POST /v1beta/{property}/runReport",
+    "base_url": "https://analyticsdata.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
+    "description": "Executes a report query against a GA4 property and returns analytics data such as sessions, users, pageviews, events, and revenue. The request body specifies date ranges, dimensions (e.g. sessionDefaultChannelGroup, country, deviceCategory), metrics (e.g. sessions, totalRevenue, conversions), filters, and order. Returns rows of dimension-metric combinations. Property ID format is 'properties/{propertyId}'. Supports up to 9 dimensions and 10 metrics per request. Sampling may occur for very large date ranges; use dateRange with small windows to avoid it.",
+    "plain_explanation": "This is the main way to pull data out of Google Analytics 4 into a data warehouse or dashboard. You specify what you want (e.g. sessions by channel by day) and it returns a table of results. Used to replicate the GA4 acquisition, engagement, conversion, and revenue reports programmatically."
+  },
+  {
+    "name": "GA4 Data API — Run Realtime Report",
+    "category": "GA4",
+    "endpoint": "POST /v1beta/{property}/runRealtimeReport",
+    "base_url": "https://analyticsdata.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
+    "description": "Returns real-time analytics data for active users on the site or app right now (within the last 30 minutes). Supports a subset of dimensions and metrics available in the standard report — notably activeUsers, eventCount, screenPageViews. Does not support date ranges (always shows the current live window). Useful for live dashboards showing concurrent users or real-time conversion activity.",
+    "plain_explanation": "Shows who is on your website or app right now. Returns data for the last 30 minutes — useful for live monitoring dashboards, seeing which pages are active, and watching conversion events happen in real time."
+  },
+  {
+    "name": "GA4 Data API — Batch Run Reports",
+    "category": "GA4",
+    "endpoint": "POST /v1beta/{property}/batchRunReports",
+    "base_url": "https://analyticsdata.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
+    "description": "Executes up to 5 report requests in a single HTTP call. Each request in the batch is equivalent to a separate runReport call. Reduces API quota usage and latency when building dashboards that need multiple independent data pulls. The response contains a 'reports' array with one result per request in the same order as the input. Each sub-report is independently filtered and can have different date ranges, dimensions, and metrics.",
+    "plain_explanation": "Runs multiple GA4 data queries in one API call instead of making 5 separate requests. Useful when building a dashboard that needs several different reports at once — for example, sessions by channel, revenue by product, and conversions by device — all fetched together efficiently."
+  },
+  {
+    "name": "GA4 Data API — Get Metadata",
+    "category": "GA4",
+    "endpoint": "GET /v1beta/{property}/metadata",
+    "base_url": "https://analyticsdata.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
+    "description": "Returns the list of all dimensions and metrics available for a GA4 property, including custom dimensions and metrics created in the GA4 interface. Each dimension and metric includes its API name, UI name, description, type, and compatibility information. Use this to discover what data fields are queryable via runReport. Custom dimensions registered in GA4 appear here with the customEvent: prefix.",
+    "plain_explanation": "Lists every data field available in your GA4 property — both standard fields like sessions and revenue, and any custom events your team has set up. Use this to find the correct API names for dimensions and metrics before writing a report query."
+  },
+  {
+    "name": "GA4 Data API — Run Pivot Report",
+    "category": "GA4",
+    "endpoint": "POST /v1beta/{property}/runPivotReport",
+    "base_url": "https://analyticsdata.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
+    "description": "Returns a customized pivot table report. Supports up to 2 pivot definitions where each pivot specifies which dimensions to use as columns. Useful for cross-tabulation reports such as sessions by channel grouped by month. Shares the same dimension, metric, and filter syntax as runReport but adds a 'pivots' array in the request body specifying the pivot dimensions, field names, and optional ordering.",
+    "plain_explanation": "Returns data in a pivot table format — for example, showing conversion rate for each traffic channel across each month as columns. Useful when you need to see how two dimensions interact with each other, similar to a spreadsheet pivot table."
+  },
+  {
+    "name": "GA4 Admin API — List Properties",
+    "category": "GA4",
+    "endpoint": "GET /v1beta/properties",
+    "base_url": "https://analyticsadmin.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
+    "description": "Lists all GA4 properties accessible to the authenticated account, with optional filter by parent account or Firebase project. Returns property ID, display name, industry category, time zone, currency, and creation time. The property ID returned here is used as the {property} path parameter in all Data API requests (format: properties/{propertyId}). Requires analytics.readonly or analytics.edit OAuth scope on the Admin API.",
+    "plain_explanation": "Lists all GA4 properties your account can access and returns their property IDs. You need the property ID to pull data from any GA4 property — use this endpoint to look it up programmatically rather than copying it from the GA4 interface."
+  },
+  {
+    "name": "GA4 Admin API — List Data Streams",
+    "category": "GA4",
+    "endpoint": "GET /v1beta/{parent}/dataStreams",
+    "base_url": "https://analyticsadmin.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
+    "description": "Lists the data streams (web, Android, iOS) configured for a GA4 property. Returns stream ID, name, type (WEB_DATA_STREAM, ANDROID_APP_DATA_STREAM, IOS_APP_DATA_STREAM), measurement ID (for web streams, used in the gtag snippet), and Firebase App ID (for app streams). The measurement ID (format: G-XXXXXXXXXX) is required for GTM configuration and client-side GA4 tag setup.",
+    "plain_explanation": "Lists all the tracking sources connected to a GA4 property — the website, Android app, and iOS app streams. Returns the measurement ID (the G-XXXXXXX code) needed for GTM configuration and confirms which apps are sending data to GA4."
+  },
+  {
+    "name": "GA4 Ecommerce Events — Standard Event Reference",
+    "category": "GA4",
+    "endpoint": "client-side event (gtag / GTM / Firebase SDK)",
+    "base_url": "https://developers.google.com/analytics/devguides/collection/ga4/ecommerce",
+    "auth": "GA4 Measurement ID (G-XXXXXXXXXX)",
+    "description": "GA4 defines a standard set of recommended ecommerce events that must be implemented consistently to populate the standard GA4 ecommerce reports. Required events for a full ecommerce funnel: view_item_list (product list impressions), view_item (product detail page), add_to_cart, remove_from_cart, view_cart, begin_checkout, add_payment_info, add_shipping_info, purchase. Each event requires specific parameters: items array (with item_id, item_name, price, quantity), currency, and value. The purchase event additionally requires transaction_id (unique order ID — critical for deduplication). Optional but recommended parameters: coupon, discount, affiliation. All monetary values must be in the same currency as the GA4 property setting.",
+    "plain_explanation": "These are the standard Google Analytics events that must be fired at each stage of the shopping funnel — from viewing a product list all the way to completing a purchase. Following GA4's exact event names and parameter structure is mandatory to get data into GA4's built-in ecommerce reports. The most critical event is 'purchase' which must include transaction_id to prevent duplicate counting."
+  },
+  {
+    "name": "GA4 Acquisition Dimensions — API Field Reference",
+    "category": "GA4",
+    "endpoint": "dimension reference — used in runReport requests",
+    "base_url": "https://analyticsdata.googleapis.com",
+    "auth": "OAuth 2.0 (scope: analytics.readonly)",
+    "description": "Key acquisition dimensions available in GA4 Data API for replicating the Acquisition reports: sessionDefaultChannelGroup (Organic Search, Paid Search, Direct, Referral, Organic Social, Paid Social, Email, Affiliates, etc.), sessionSource, sessionMedium, sessionCampaignName, sessionGoogleAdsAdGroupName, firstUserDefaultChannelGroup, firstUserSource, firstUserMedium, firstUserCampaignName. Key acquisition metrics: sessions, totalUsers, newUsers, bounceRate, engagementRate, averageSessionDuration, conversions (requires specifying a conversion event in GA4), totalRevenue. The sessionDefaultChannelGroup dimension maps to the Channel grouping column in the GA4 Acquisition > Traffic acquisition report.",
+    "plain_explanation": "These are the field names to use in GA4 API queries when replicating the Acquisition reports. sessionDefaultChannelGroup gives you the traffic channel (Organic, Paid, Direct etc.), sessionSource/sessionMedium give UTM data, and firstUser dimensions give the first-touch attribution channel. Combine these with metrics like sessions, conversions, and totalRevenue to replicate the GA4 acquisition reports in your data warehouse."
+  }
+]

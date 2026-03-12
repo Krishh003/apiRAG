@@ -1,0 +1,65 @@
+[
+  {
+    "name": "Meta Pixel — Client-Side Tracking Overview",
+    "category": "Meta Pixel",
+    "endpoint": "client-side JavaScript — fbq() function",
+    "base_url": "https://connect.facebook.net/en_US/fbevents.js",
+    "auth": "Meta Pixel ID (numeric string, e.g. 1234567890)",
+    "description": "Meta Pixel is a JavaScript snippet placed on a website that tracks user behaviour and sends browser-side events to Meta for ad conversion tracking and audience building. Initialised with fbq('init', 'PIXEL_ID') and fbq('track', 'PageView'). Standard events tracked client-side: PageView (every page load), ViewContent (product page), AddToCart, InitiateCheckout, AddPaymentInfo, Purchase, Lead, CompleteRegistration, Search, AddToWishlist. For ecommerce, the Purchase event must fire on the order confirmation page with the value and currency parameters. Meta Pixel is subject to browser ad blockers and iOS 14+ ATT consent requirements, which cause undercounting — typically 20-40% of conversions are missed by browser-only tracking. The solution is to pair Pixel with the Conversions API (server-side).",
+    "plain_explanation": "Meta Pixel is a small piece of JavaScript code on the website that tells Meta when customers do things like view a product, add to cart, or complete a purchase. It's easy to set up but has a growing blind spot — ad blockers and iOS privacy rules mean it misses 20-40% of conversions. That's why it's paired with the Conversions API which sends the same events from the server where ad blockers can't interfere."
+  },
+  {
+    "name": "Meta Pixel — Purchase Event",
+    "category": "Meta Pixel",
+    "endpoint": "client-side: fbq('track', 'Purchase', {parameters})",
+    "base_url": "https://connect.facebook.net/en_US/fbevents.js",
+    "auth": "Meta Pixel ID",
+    "description": "The Purchase event is the most important conversion event for ecommerce. Required parameters: value (numeric order total), currency (ISO 4217, e.g. 'INR'). Recommended parameters for attribution and audience quality: content_ids (array of product IDs purchased — must match the product catalog feed), content_type ('product' or 'product_group'), contents (array of {id, quantity, item_price} objects), num_items, order_id (strongly recommended for deduplication with CAPI). The event must fire only once per order, on the order confirmation/thank-you page. Sending duplicate Purchase events inflates ROAS. order_id is used as the event_id for deduplication when the same event is also sent via the Conversions API.",
+    "plain_explanation": "This is the event that fires when a customer completes a purchase. It tells Meta the order value and which products were bought — Meta uses this to measure campaign ROAS and optimise ad delivery toward buyers. The order_id must be included so that when the same event is also sent from the server (via CAPI), Meta can recognise it as the same purchase and not count it twice."
+  },
+  {
+    "name": "Meta Pixel — AddToCart Event",
+    "category": "Meta Pixel",
+    "endpoint": "client-side: fbq('track', 'AddToCart', {parameters})",
+    "base_url": "https://connect.facebook.net/en_US/fbevents.js",
+    "auth": "Meta Pixel ID",
+    "description": "Fires when a user adds a product to their cart. Key parameters: content_ids (array of product IDs added), content_type ('product'), contents (array of {id, quantity, item_price}), value (total value of items added), currency. Used for cart abandonment retargeting audiences and for optimising campaigns toward add-to-cart events when purchase volume is too low for the algorithm to optimise on. Part of the ecommerce funnel micro-conversion sequence: ViewContent → AddToCart → InitiateCheckout → Purchase.",
+    "plain_explanation": "Fires when a customer adds a product to their cart. Meta uses this event to build retargeting audiences (people who added to cart but didn't buy) and to optimise campaigns toward this action. It's an important funnel step that helps diagnose where customers are dropping off in the purchase journey."
+  },
+  {
+    "name": "Meta Pixel — InitiateCheckout Event",
+    "category": "Meta Pixel",
+    "endpoint": "client-side: fbq('track', 'InitiateCheckout', {parameters})",
+    "base_url": "https://connect.facebook.net/en_US/fbevents.js",
+    "auth": "Meta Pixel ID",
+    "description": "Fires when a user begins the checkout process (clicks 'Proceed to Checkout'). Parameters: content_ids (product IDs in cart), num_items (number of items), value (cart total), currency. Used for checkout abandonment retargeting — users who reached checkout but did not purchase are a high-intent audience. Also signals to Meta's algorithm that the user is a serious purchase intent signal for lookalike audience creation. The gap between InitiateCheckout count and Purchase count represents checkout abandonment rate.",
+    "plain_explanation": "Fires when a customer starts the checkout process. The difference between the number of InitiateCheckout events and Purchase events is your checkout abandonment rate. Meta uses this event to build retargeting audiences for people who were close to buying but didn't complete the purchase."
+  },
+  {
+    "name": "Meta Conversions API (CAPI) — Send Server Events",
+    "category": "Meta Pixel",
+    "endpoint": "POST /v23.0/{pixel-id}/events",
+    "base_url": "https://graph.facebook.com",
+    "auth": "System User access token with ads_management permission",
+    "description": "The Conversions API (CAPI) sends conversion events from the server rather than the browser, bypassing ad blockers and iOS 14+ tracking restrictions. Request body requires: data (array of event objects), each with: event_name (must match Pixel event names exactly — 'Purchase', 'AddToCart', etc.), event_time (Unix timestamp), event_source_url, action_source ('website'), user_data (hashed customer identifiers for matching — email as SHA256, phone as SHA256, fbc cookie, fbp cookie, client_ip_address, client_user_agent), custom_data (value, currency, content_ids, order_id). The test_event_code parameter enables the Events Manager test tool to verify events without affecting live data. Deduplication with browser Pixel events is handled via the event_id field — set event_id to the same unique value (e.g. order ID + event name) in both the fbq() call and the CAPI payload.",
+    "plain_explanation": "This sends purchase and other conversion events from our server directly to Meta, rather than relying on the browser. This is critical because ad blockers and Apple's iOS privacy changes cause the browser Pixel to miss 20-40% of conversions. By sending events from the server, we capture the conversions that the browser missed — improving campaign optimisation accuracy and reported ROAS."
+  },
+  {
+    "name": "Meta Pixel + CAPI — Event Deduplication",
+    "category": "Meta Pixel",
+    "endpoint": "parameter reference — event_id field",
+    "base_url": "https://graph.facebook.com",
+    "auth": "Meta Pixel ID + System User access token",
+    "description": "When both Meta Pixel (browser) and Conversions API (server) send the same event, Meta must deduplicate them to avoid double-counting conversions. Deduplication requires setting the event_id parameter to the same unique string value in both the Pixel fbq() call and the CAPI payload. The event_id must be unique per event occurrence — recommended format: '{order_id}_{event_name}' (e.g. 'ORD12345_Purchase'). Meta deduplicates events where event_name, event_id, and pixel_id all match within a 48-hour window. Required parameters for Pixel: fbq('track', 'Purchase', {data}, {eventID: 'ORD12345_Purchase'}). Required parameters for CAPI: event_id in the event object. Without event_id, Meta uses a probabilistic deduplication algorithm that is less reliable and may still double-count.",
+    "plain_explanation": "When we send the same conversion event from both the website browser (Pixel) and our server (CAPI), Meta needs to know they're the same event so it doesn't count the purchase twice. The fix is simple: generate a unique ID for each event (like the order ID) and include it in both the browser call and the server call. Meta then recognises the duplicate and ignores the second one."
+  },
+  {
+    "name": "Meta Pixel — Customer Information Hashing for CAPI",
+    "category": "Meta Pixel",
+    "endpoint": "parameter reference — user_data object in CAPI events",
+    "base_url": "https://graph.facebook.com",
+    "auth": "System User access token",
+    "description": "The Conversions API requires customer information in the user_data object to match the server-side event to a Meta user profile. This matching determines whether a sale is attributed to a Meta ad. Required parameters for best match rates: em (email, SHA256 hashed, lowercase before hashing), ph (phone number, SHA256 hashed, E.164 format with country code, no special characters). Optional but strongly recommended: fbc (click ID from _fbc cookie, format: fb.1.{timestamp}.{fbclid}), fbp (browser ID from _fbp cookie), client_ip_address (raw, not hashed), client_user_agent (raw, not hashed), fn (first name, SHA256), ln (last name, SHA256). Hash all PII fields with SHA256 before sending. Never send plaintext PII. Higher match quality improves attribution and optimisation.",
+    "plain_explanation": "To match a purchase event back to the customer who clicked the Meta ad, we send hashed customer details (email, phone number) along with the event. These are hashed (scrambled) before sending so Meta never receives actual personal data — only a scrambled version that Meta can match against its own scrambled records. The better the customer data we send, the more sales get correctly attributed to Meta campaigns."
+  }
+]

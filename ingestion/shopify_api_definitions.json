@@ -1,0 +1,83 @@
+[
+  {
+    "name": "Shopify Admin API — List Orders",
+    "category": "Shopify",
+    "endpoint": "GET /admin/api/2024-10/orders.json",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header (or Basic Auth with API key + password for private apps)",
+    "description": "Returns a list of orders for the store. Key query parameters: status (open, closed, cancelled, any), created_at_min, created_at_max, updated_at_min, updated_at_max, processed_at_min, processed_at_max, limit (max 250, default 50), since_id (for cursor pagination), fields (comma-separated field names to return). Key response fields per order: id, order_number, created_at, updated_at, processed_at, financial_status (pending, paid, refunded, partially_refunded), fulfillment_status, total_price, subtotal_price, total_tax, total_discounts, currency, customer (id, email, first_name, last_name), billing_address, shipping_address, line_items (product_id, variant_id, sku, title, quantity, price, discount_allocations), discount_codes, payment_gateway, source_name, landing_site, referring_site, tags. Rate limit: 2 requests/second (leaky bucket: 40 bucket size). Use since_id-based pagination for incremental ETL.",
+    "plain_explanation": "Pulls order data from Shopify — the backbone of ecommerce analytics. Returns every order with customer details, products bought, prices, discounts, and traffic source. For the data warehouse, this is the primary source for revenue, order count, and product sales metrics. Use the updated_at_min parameter to pull only orders that have changed since the last extraction for incremental syncs."
+  },
+  {
+    "name": "Shopify Admin API — Get Single Order",
+    "category": "Shopify",
+    "endpoint": "GET /admin/api/2024-10/orders/{order_id}.json",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header",
+    "description": "Retrieves the full details of a single order by its numeric ID. Returns the complete order object including all line items, fulfillments, refunds, transactions, and metafields. The refunds array within the order object shows any refunds applied and their line item adjustments. The transactions array shows payment events (sale, capture, refund, void). Useful for webhook-triggered processing: when an order webhook fires, use the order ID from the webhook payload to fetch the full order object.",
+    "plain_explanation": "Fetches complete details for a specific order by its ID. Used in webhook-driven pipelines: when Shopify notifies us that an order was created or updated, we call this endpoint to get the full order data to store in the warehouse."
+  },
+  {
+    "name": "Shopify Admin API — Create Refund",
+    "category": "Shopify",
+    "endpoint": "POST /admin/api/2024-10/orders/{order_id}/refunds.json",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header",
+    "description": "Creates a refund for an existing order. The refund object requires: refund_line_items (array specifying which line items to refund, with quantity and restock options), transactions (payment transaction to process the refund), shipping (optional — to refund shipping cost), note (internal note). Use the 'calculate' endpoint (POST /orders/{id}/refunds/calculate.json) first to preview the refund amounts before submitting. Refunds update the order's financial_status and are reflected in the refunds array on the order object. All refund records should be extracted and stored separately in the data warehouse to accurately calculate net revenue.",
+    "plain_explanation": "Processes a refund for a Shopify order. For data warehouse purposes, refunds must be captured and stored separately to calculate net revenue correctly — gross revenue minus refunds equals net revenue. Refund data is also needed to reconcile Shopify revenue figures with payment gateway settlements."
+  },
+  {
+    "name": "Shopify Admin API — List Products",
+    "category": "Shopify",
+    "endpoint": "GET /admin/api/2024-10/products.json",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header",
+    "description": "Returns a list of products in the store. Key fields: id, title, vendor, product_type, handle, status (active, archived, draft), tags, created_at, updated_at, variants (each with id, sku, price, compare_at_price, inventory_quantity, weight, option values), images, options (size, color, etc.). The variants array is critical for SKU-level reporting — each variant has its own SKU, price, and inventory. Supports filters: vendor, product_type, collection_id, status, published_status, since_id. Pagination uses the Link header with since_id or cursor-based pagination for large catalogs.",
+    "plain_explanation": "Pulls the product catalog from Shopify including all variants (sizes, colors, SKUs). For the data warehouse, this is the product dimension table — used to enrich order line items with product type, vendor, and category information for SKU-level and product-level performance reporting."
+  },
+  {
+    "name": "Shopify Admin API — List Customers",
+    "category": "Shopify",
+    "endpoint": "GET /admin/api/2024-10/customers.json",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header",
+    "description": "Returns a list of customers with their profile and order history summary. Key fields: id, email, phone, first_name, last_name, created_at, updated_at, orders_count (total number of orders), total_spent (lifetime spend), last_order_id, last_order_name, tags, verified_email, accepts_email_marketing, accepts_sms_marketing, addresses. Supports filters: created_at_min, created_at_max, updated_at_min, since_id. Supports since_id pagination. For cohort analysis, use created_at to determine customer acquisition date. For LTV calculation, use total_spent or sum order values from the orders endpoint filtered by customer_id.",
+    "plain_explanation": "Pulls customer records from Shopify with their purchase history summary. The created_at date is the customer acquisition date for cohort analysis. total_spent gives a quick lifetime value figure. For detailed LTV calculation, pull all orders per customer from the orders endpoint and calculate there."
+  },
+  {
+    "name": "Shopify Admin API — Create Webhook",
+    "category": "Shopify",
+    "endpoint": "POST /admin/api/2024-10/webhooks.json",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header",
+    "description": "Registers a webhook to receive real-time notifications when specified events occur in the store. Required fields: topic (event type), address (your HTTPS endpoint URL to receive the webhook). Key topics for data pipelines: orders/create (new order placed), orders/updated (order status change, fulfillment, refund), orders/paid (payment confirmed), orders/cancelled, products/create, products/update, customers/create, customers/update, refunds/create. Webhook payloads are signed with HMAC-SHA256 using the shared secret — always verify the X-Shopify-Hmac-Sha256 header before processing. Shopify retries failed webhooks up to 19 times over 48 hours. For high reliability, acknowledge with 200 OK immediately and process asynchronously.",
+    "plain_explanation": "Sets up a real-time notification so that Shopify automatically calls our server the moment an order is placed, updated, or cancelled. This enables near-real-time data pipelines without constant API polling. Every webhook payload should be acknowledged immediately with a 200 response, then processed in the background to avoid Shopify timing out and retrying."
+  },
+  {
+    "name": "Shopify Admin API — List Webhooks",
+    "category": "Shopify",
+    "endpoint": "GET /admin/api/2024-10/webhooks.json",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header",
+    "description": "Returns all registered webhooks for the store, including their id, topic, address, format, created_at, updated_at, and api_version. Used to audit which webhook subscriptions are active and verify they point to the correct endpoint URLs. If a webhook delivery failure rate exceeds a threshold, Shopify may automatically pause or delete the webhook — use this endpoint to monitor webhook health. Delete stale webhooks to avoid unnecessary traffic to old endpoints.",
+    "plain_explanation": "Lists all the webhook subscriptions registered on the Shopify store. Use this to audit and verify that the pipeline webhooks are configured correctly and pointing to the right server URLs."
+  },
+  {
+    "name": "Shopify Admin API — Incremental Orders Extraction Strategy",
+    "category": "Shopify",
+    "endpoint": "parameter reference — since_id and updated_at_min",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "Admin API access token in X-Shopify-Access-Token header",
+    "description": "Best practice for incremental ETL of Shopify orders: use updated_at_min set to the last successful extraction timestamp to capture both new orders and updates to existing orders (fulfillment, refund, cancellation). Cursor pagination using since_id ensures no records are missed during pagination — always store the last seen order id and use it as since_id on the next page request. Do not rely on created_at_min alone because existing orders can be updated (refunded, fulfilled) days after creation and would be missed. Rate limits: Shopify REST API allows 2 calls/second per shop for standard apps (leaky bucket: 40 burst). For large stores, use the Shopify GraphQL Bulk Operation API for full table syncs to avoid hitting rate limits.",
+    "plain_explanation": "The correct way to keep Shopify order data in sync with the warehouse without pulling all orders every time. Use updated_at_min equal to the last sync timestamp so you only pull orders that were created or changed since the last run. This captures both new orders and any existing orders that were updated (refunded, fulfilled) since the last sync."
+  },
+  {
+    "name": "Shopify Webhooks — Order Data Mismatch with GA4",
+    "category": "Shopify",
+    "endpoint": "reference — Shopify vs GA4 order count differences",
+    "base_url": "https://{store-name}.myshopify.com",
+    "auth": "N/A — conceptual reference",
+    "description": "Shopify and GA4 frequently report different purchase counts for the same period. Root causes: (1) GA4 purchase event fires in the browser — if the customer closes the tab before the thank-you page loads, or has JavaScript disabled or an ad blocker, GA4 misses the event while Shopify records the payment server-side. (2) Shopify includes all orders regardless of source (phone orders, admin-created orders, draft orders converted manually) — GA4 only captures web-originated purchases. (3) GA4 uses session-based attribution and may attribute the purchase to a different date if the session crosses midnight. (4) Cancelled and refunded orders are included in Shopify counts unless filtered by financial_status=paid. (5) Test orders created in Shopify's admin are real Shopify records but should not fire GA4 events. Reconciliation: compare Shopify orders filtered to source_name=web and financial_status=paid against GA4 purchase event count.",
+    "plain_explanation": "This explains why Shopify and GA4 show different numbers of purchases — a very common problem. The main reasons are: GA4 relies on browser JavaScript that can be blocked or missed, Shopify also counts phone orders and admin-created orders that never go through the website, and cancelled or test orders inflate Shopify counts. To compare them fairly, filter Shopify to only web-originated paid orders."
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST http://localhost:8000/admin/scrape -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(curl -s http://localhost:8000/admin/scrape/status)"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "name": "AppsFlyer Pull API — Installs Report",
+    "category": "AppsFlyer",
+    "endpoint": "GET /export/{app_id}/installs_report/v5",
+    "base_url": "https://hq1.appsflyer.com",
+    "auth": "API V2 token in Authorization header (Bearer {token})",
+    "description": "Returns raw install attribution data for a mobile app. Each row represents one app install with its attributed media source, campaign, ad set, ad, and attribution data. Key fields returned: appsflyer_id (unique device ID), advertising_id (GAID or IDFA), install_time, attributed_touch_type (click or impression), attributed_touch_time, media_source (the ad network credited), campaign, campaign_id, adset, adset_id, ad, ad_id, channel, keywords, country_code, ip, city, device_type, os_version, app_version, event_revenue_usd, is_retargeting. Required query parameters: api_token (legacy, now in header), app_id (app bundle ID), from (YYYY-MM-DD), to (YYYY-MM-DD). Date range limited to 90 days maximum per request. Data retention: 90 days for raw data. Returns CSV format by default. Use for building install attribution tables in the data warehouse.",
+    "plain_explanation": "Downloads a CSV of every app install with information about which ad or campaign the install came from. Each row is one install, and AppsFlyer tells you exactly which ad network, campaign, and ad the user tapped before installing the app. This is the foundation of mobile app attribution — it answers 'where did our app installs come from?'"
+  },
+  {
+    "name": "AppsFlyer Pull API — In-App Events Report",
+    "category": "AppsFlyer",
+    "endpoint": "GET /export/{app_id}/in_app_events_report/v5",
+    "base_url": "https://hq1.appsflyer.com",
+    "auth": "API V2 token in Authorization header (Bearer {token})",
+    "description": "Returns post-install in-app event data with attribution. Each row represents one in-app event (e.g. purchase, registration, add_to_cart) linked back to its original install attribution. Key fields: appsflyer_id, event_name, event_time, event_revenue, event_revenue_usd, event_revenue_currency, event_value (JSON object with custom event parameters), media_source, campaign, adset, ad, install_time, is_retargeting. Required parameters: app_id, from, to, event_name (optional — filter to specific events). Maximum date range: 90 days. Event_value field contains the custom parameters logged with each event (e.g. product IDs, order values) as a JSON string — must be parsed after extraction. Used to build post-install funnel analysis and measure in-app conversion rates by acquisition source.",
+    "plain_explanation": "Downloads every in-app event (purchases, registrations, level completions, etc.) with their original attribution data — which ad or campaign the user came from. This answers 'which campaigns are driving not just installs but actual purchases inside the app?' Combine this with install data to calculate cost per acquisition and LTV by channel."
+  },
+  {
+    "name": "AppsFlyer Pull API — Uninstall Events Report",
+    "category": "AppsFlyer",
+    "endpoint": "GET /export/{app_id}/uninstall_events_report/v5",
+    "base_url": "https://hq1.appsflyer.com",
+    "auth": "API V2 token in Authorization header (Bearer {token})",
+    "description": "Returns app uninstall events with their original install attribution data. AppsFlyer detects uninstalls via silent push notifications. Each row: appsflyer_id, uninstall_time, media_source, campaign, install_time, days_to_uninstall. Date range limited to 90 days. Note: uninstall detection is not instantaneous — the device must receive a push notification that fails, which can take days or weeks after the actual uninstall. Uninstall rate by media source is a retention quality signal — high uninstall rates from a channel indicate low-quality installs. Used to calculate Day-N retention rates and quality-adjusted CPI.",
+    "plain_explanation": "Shows when users uninstalled the app along with which ad campaign originally brought them. High uninstall rates from a particular ad network or campaign indicate poor-quality installs — users who downloaded but didn't engage. Use this data to calculate Day-7 and Day-30 retention by source and identify which campaigns bring users who actually stay."
+  },
+  {
+    "name": "AppsFlyer Pull API — Aggregate Performance Report",
+    "category": "AppsFlyer",
+    "endpoint": "GET /export/{app_id}/partners_by_date_report/v5",
+    "base_url": "https://hq1.appsflyer.com",
+    "auth": "API V2 token in Authorization header (Bearer {token})",
+    "description": "Returns pre-aggregated daily performance metrics per media source (ad network) and campaign. Fields: date, app_id, media_source, campaign, impressions, clicks, installs, sessions, loyal_users, loyal_users_rate, total_revenue, total_cost, arpu, average_ecpi, in_app_events count per event type. Much smaller data volume than raw reports — one row per media source per day rather than one row per install. Does not include individual user data so no 90-day retention restriction. Suitable for high-level campaign performance dashboards where row-level install data is not needed. Compare this against ad network self-reported data (Meta Ads API, Google Ads API) to identify attribution discrepancies.",
+    "plain_explanation": "A summarised daily report that shows total installs, revenue, and in-app events per ad network and campaign — one row per day per campaign rather than one row per user. This is the right endpoint for a campaign performance dashboard when you just need totals, not individual user details. It also stays within data retention limits since it doesn't expose raw user data."
+  },
+  {
+    "name": "AppsFlyer Pull API — Retargeting Conversions Report",
+    "category": "AppsFlyer",
+    "endpoint": "GET /export/{app_id}/retargeting_in_app_events_report/v5",
+    "base_url": "https://hq1.appsflyer.com",
+    "auth": "API V2 token in Authorization header (Bearer {token})",
+    "description": "Returns in-app events attributed to retargeting campaigns (re-engagement and re-attribution). Separate from the standard in-app events report which only covers new user acquisition. is_retargeting field differentiates re-engagement (user re-engaged with an existing install) from re-attribution (user reinstalled after lapse). Required to get complete picture of revenue attribution — if retargeting campaigns are running, some revenue will be attributed to retargeting and excluded from the standard installs/in-app events reports. Fields are the same as the standard in-app events report but with additional retargeting-specific attribution fields.",
+    "plain_explanation": "Covers conversions driven by retargeting campaigns — ads shown to users who already installed the app to bring them back. Without pulling this report separately, retargeting-attributed revenue will be missing from the overall attribution picture. If retargeting campaigns are running, this report must be combined with the standard in-app events report for complete revenue attribution by channel."
+  },
+  {
+    "name": "AppsFlyer vs MMP Attribution — Reconciliation Concepts",
+    "category": "AppsFlyer",
+    "endpoint": "conceptual reference — attribution methodology",
+    "base_url": "https://support.appsflyer.com",
+    "auth": "N/A — conceptual reference",
+    "description": "AppsFlyer uses last-touch attribution by default — the last ad click or impression before the install gets 100% of the credit. Attribution priority order (click wins over impression): 1. Click-based attribution with ID matching (GAID/IDFA match), 2. Click-based probabilistic matching (IP + device fingerprint), 3. View-through attribution if enabled. Attribution window defaults: 7 days for clicks, 1 day for view-through (configurable per partner). GA4 attribution (session-based, last non-direct click for Ads reports, data-driven for conversions) will never match AppsFlyer totals — they measure different things. GA4 measures web sessions; AppsFlyer measures app installs and post-install events. For unified attribution across web and app, events from both must be combined in the data warehouse with a defined single attribution model applied consistently.",
+    "plain_explanation": "Explains why AppsFlyer install numbers will never perfectly match GA4 or Meta Ads numbers — they each use different rules for deciding which ad gets credit for a conversion. AppsFlyer is the source of truth for mobile app attribution. GA4 is the source of truth for website attribution. Meta Ads uses its own attribution. To compare them, you need to understand the different attribution window and logic each platform uses."
+  }
+]

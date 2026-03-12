@@ -133,6 +133,7 @@
   .sug-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
   .sug-label.lookup { color: var(--teal); }
   .sug-label.planning { color: var(--amber); }
+  .sug-label.advisory { color: var(--violet); }
   .sug-text { font-size: 12.5px; color: var(--text-2); line-height: 1.4; }
 
   .message { display: flex; gap: 12px; animation: fadeUp 0.3s ease forwards; max-width: 860px; }
@@ -142,10 +143,12 @@
   .message.user .msg-avatar { background: var(--amber); color: #080b12; font-weight: 700; }
   .message.assistant .msg-avatar { background: var(--teal-glow); border: 1px solid rgba(0,229,176,0.3); }
   .message.assistant.planning-msg .msg-avatar { background: var(--amber-glow); border: 1px solid rgba(240,165,0,0.3); }
+  .message.assistant.advisory-msg .msg-avatar { background: var(--violet-glow); border: 1px solid rgba(167,139,250,0.3); }
   .msg-content { flex: 1; min-width: 0; }
   .msg-type-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; }
   .msg-type-badge.lookup { background: var(--teal-glow); color: var(--teal); }
   .msg-type-badge.planning { background: var(--amber-glow); color: var(--amber); }
+  .msg-type-badge.advisory { background: var(--violet-glow); color: var(--violet); }
   .msg-bubble { padding: 14px 18px; border-radius: var(--radius-lg); line-height: 1.75; font-size: 14px; }
   .message.user .msg-bubble { 
     background: var(--teal); 
@@ -263,6 +266,22 @@
   .scrape-progress { text-align: center; padding: 16px 0 8px; font-size: 13px; color: var(--text-2); display: none; }
   .scrape-progress.visible { display: block; }
   .scrape-progress .progress-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  /* Upload tab */
+  .drop-zone { border: 2px dashed var(--border2); border-radius: 10px; padding: 36px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--teal); background: var(--teal-glow2); }
+  .drop-zone-icon { color: var(--text-3); margin-bottom: 10px; }
+  .drop-zone-label { font-size: 14px; font-weight: 500; color: var(--text-2); margin-bottom: 4px; }
+  .drop-zone-sub { font-size: 12px; color: var(--text-3); }
+  .drop-zone-sub span { color: var(--teal); }
+  .upload-file-info { display: none; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; margin-top: 12px; font-size: 13px; }
+  .upload-file-info.visible { display: flex; }
+  .upload-file-name { flex: 1; color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .upload-file-size { color: var(--text-3); flex-shrink: 0; }
+  .upload-file-clear { background: none; border: none; cursor: pointer; color: var(--text-3); padding: 2px; display: flex; }
+  .upload-file-clear:hover { color: var(--red); }
+  .upload-result { font-size: 12px; color: var(--text-3); margin-top: 10px; font-family: var(--mono); display: none; }
+  .upload-result.visible { display: block; }
+  #fileInput { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .optional-fields { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 6px; }
   .optional-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); cursor: pointer; margin-bottom: 10px; background: none; border: none; font-family: var(--font); }
@@ -372,6 +391,14 @@
             <div class="sug-label lookup">Lookup</div>
             <div class="sug-text">What is the difference between Twilio SMS and Verify?</div>
           </div>
+          <div class="sug-card" onclick="sendSuggestion(this)">
+            <div class="sug-label advisory">Advisory</div>
+            <div class="sug-text">Why do Shopify purchase numbers differ from GA4?</div>
+          </div>
+          <div class="sug-card" onclick="sendSuggestion(this)">
+            <div class="sug-label advisory">Advisory</div>
+            <div class="sug-text">What SQL query calculates daily revenue from Shopify orders?</div>
+          </div>
         </div>
       </div>
     </div>
@@ -414,6 +441,10 @@
       <button class="modal-tab" id="tabAdvanced" onclick="switchModalTab('advanced')">
         <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
         Advanced
+      </button>
+      <button class="modal-tab" id="tabUpload" onclick="switchModalTab('upload')">
+        <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        Upload File
       </button>
     </div>
 
@@ -521,6 +552,39 @@
       <div class="modal-footer">
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary" onclick="saveAPI()">Save API</button>
+      </div>
+    </div>
+
+    <!-- Upload File Tab -->
+    <div class="tab-panel" id="panelUpload">
+      <div class="modal-body">
+        <input type="file" id="fileInput" accept=".json,.pdf" onchange="onFileSelected(this.files[0])">
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
+             ondragover="event.preventDefault(); this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="event.preventDefault(); this.classList.remove('drag-over'); onFileSelected(event.dataTransfer.files[0])">
+          <div class="drop-zone-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          </div>
+          <div class="drop-zone-label">Drop a file here or click to browse</div>
+          <div class="drop-zone-sub">Supports <span>.json</span> (API definition list) and <span>.pdf</span> (API documentation)</div>
+        </div>
+        <div class="upload-file-info" id="uploadFileInfo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--teal)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+          <span class="upload-file-name" id="uploadFileName"></span>
+          <span class="upload-file-size" id="uploadFileSize"></span>
+          <button class="upload-file-clear" onclick="clearUploadFile()" title="Remove">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="upload-result" id="uploadResult"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload
+        </button>
       </div>
     </div>
   </div>
@@ -689,13 +753,15 @@
     const chatArea = document.getElementById('chatArea');
     const el = document.createElement('div');
     const isPlan = data.query_type === 'planning';
-    el.className = `message assistant ${isPlan ? 'planning-msg' : ''}`;
+    const isAdvisory = data.query_type === 'advisory';
+    el.className = `message assistant ${isPlan ? 'planning-msg' : ''} ${isAdvisory ? 'advisory-msg' : ''}`;
 
-    const badgeHtml = `<div class="msg-type-badge ${data.query_type}">
-      ${isPlan 
-        ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Step-by-step plan` 
-        : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Lookup answer`}
-    </div>`;
+    const BADGE_ICONS = {
+      planning: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Step-by-step plan`,
+      advisory: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>Advisory`,
+      lookup: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Lookup answer`,
+    };
+    const badgeHtml = `<div class="msg-type-badge ${data.query_type}">${BADGE_ICONS[data.query_type] || BADGE_ICONS.lookup}</div>`;
 
     // Plan steps as cards (if present)
     let stepsHtml = '';
@@ -743,9 +809,11 @@
 
     el.innerHTML = `
       <div class="msg-avatar">
-        ${isPlan 
-          ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>` 
-          : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`}
+        ${isPlan
+          ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>`
+          : isAdvisory
+            ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
+            : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`}
       </div>
       <div class="msg-content">
         ${badgeHtml}
@@ -885,6 +953,8 @@
   }
 
   // Modal
+  let _uploadFile = null;
+
   function openModal() {
     document.getElementById('modal').classList.add('open');
     switchModalTab('simple');
@@ -894,17 +964,82 @@
     document.getElementById('fUrlCategory').value = '';
     document.getElementById('scrapeProgress').classList.remove('visible');
     document.getElementById('scrapeUrlBtn').disabled = false;
+    // Reset upload form
+    clearUploadFile();
+    document.getElementById('uploadResult').classList.remove('visible');
+  }
+
+  function onFileSelected(file) {
+    if (!file) return;
+    const allowed = ['.json', '.pdf'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowed.includes(ext)) {
+      showToast('Only .json and .pdf files are supported.', 'error');
+      return;
+    }
+    _uploadFile = file;
+    document.getElementById('uploadFileName').textContent = file.name;
+    document.getElementById('uploadFileSize').textContent = file.size > 1024*1024
+      ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
+      : (file.size / 1024).toFixed(0) + ' KB';
+    document.getElementById('uploadFileInfo').classList.add('visible');
+    document.getElementById('uploadBtn').disabled = false;
+  }
+
+  function clearUploadFile() {
+    _uploadFile = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('uploadFileInfo').classList.remove('visible');
+    document.getElementById('uploadBtn').disabled = true;
+  }
+
+  async function uploadFile() {
+    if (!_uploadFile) return;
+    const btn = document.getElementById('uploadBtn');
+    const result = document.getElementById('uploadResult');
+    btn.disabled = true;
+    btn.textContent = 'Uploading...';
+    result.classList.remove('visible');
+
+    try {
+      const form = new FormData();
+      form.append('file', _uploadFile);
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const data = await res.json();
+
+      if (data.count > 0) {
+        showToast(`${data.count} API${data.count !== 1 ? 's' : ''} added from "${_uploadFile.name}"`, 'success');
+        result.textContent = `Added: ${data.added.slice(0, 5).join(', ')}${data.added.length > 5 ? ` … and ${data.added.length - 5} more` : ''}` +
+          (data.errors.length ? `\nErrors: ${data.errors.join('; ')}` : '');
+        result.classList.add('visible');
+        await loadAPIs();
+        await loadPlatforms();
+        setTimeout(closeModal, 1800);
+      } else {
+        showToast('No APIs found in that file.', 'warning');
+        result.textContent = data.errors.length ? `Errors: ${data.errors.join('; ')}` : 'No entries could be parsed.';
+        result.classList.add('visible');
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Upload';
+      }
+    } catch(e) {
+      showToast('Upload failed. Is the server running?', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Upload';
+    }
   }
   function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
   function switchModalTab(tab) {
     document.getElementById('tabSimple').classList.toggle('active', tab === 'simple');
     document.getElementById('tabAdvanced').classList.toggle('active', tab === 'advanced');
+    document.getElementById('tabUpload').classList.toggle('active', tab === 'upload');
     document.getElementById('panelSimple').classList.toggle('active', tab === 'simple');
     document.getElementById('panelAdvanced').classList.toggle('active', tab === 'advanced');
+    document.getElementById('panelUpload').classList.toggle('active', tab === 'upload');
     if (tab === 'advanced') {
       setTimeout(() => document.getElementById('fName').focus(), 50);
-    } else {
+    } else if (tab === 'simple') {
       setTimeout(() => document.getElementById('fUrl').focus(), 50);
     }
   }

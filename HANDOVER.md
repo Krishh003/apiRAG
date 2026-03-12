@@ -28,16 +28,18 @@ Deployed on: internal company server (Docker available). Currently being tested 
 - Neo4j graph store connects via Docker (bolt://localhost:7687)
 - BM25 hybrid search + Reciprocal Rank Fusion implemented
 - Cross-encoder reranker implemented
-- Query classifier (lookup vs planning) working
+- Query classifier (lookup vs planning vs advisory) working — three-way classification
 - Lookup handler working (Gemini 2.5 Flash, max_output_tokens: 1500, context: 1500 chars/source)
 - Planning handler working (Gemini 2.5 Pro + graph traversal)
+- Advisory handler working (Gemini 2.5 Pro, data engineering expert system prompt, KB context as grounding)
 - OpenAPI ingestion pipeline working — Twilio, SendGrid, Stripe, Google Maps parse correctly from GitHub specs
 - Meta/WhatsApp/Instagram ingestion working — loaded from curated JSON definitions (16 entries)
+- GA4, Meta Ads, Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase — curated JSON definitions added
 - Manual API entry via POST /api/apis working
 - File upload (.json, .csv, .txt, .pdf) working
 - Single-URL scraping via "From Website" modal (Playwright, improved selectors)
 - APScheduler weekly scrape cron running
-- Frontend UI running at localhost:8000 — all emojis replaced with SVGs
+- Frontend UI running at localhost:8000 — all emojis replaced with SVGs, advisory badge added
 
 ### What is NOT working / in progress
 
@@ -58,6 +60,7 @@ scraper still works for non-Meta URLs via the "From Website" single-URL feature.
 | Backend | FastAPI 0.115.5 | Python |
 | LLM — lookup + classification | Gemini 2.5 Flash | model string: gemini-2.5-flash |
 | LLM — planning queries | Gemini 2.5 Pro | model string: gemini-2.5-pro |
+| LLM — advisory queries | Gemini 2.5 Pro | model string: gemini-2.5-pro |
 | LLM — structuring + enrichment | Gemini 2.5 Flash | model string: gemini-2.5-flash |
 | Vector DB | ChromaDB 0.5.23 | persistent, local |
 | Embeddings | BAAI/bge-large-en-v1.5 | via sentence-transformers 2.7.0 |
@@ -91,11 +94,17 @@ api-rag-v2/
 ├── internal_api_template.json     # Template for internal API wrapper entries
 │
 ├── ingestion/
-│   ├── openapi_parser.py          # Fetches and parses OpenAPI specs from GitHub
-│   ├── playwright_scraper.py      # Scrapes non-Meta URLs via Playwright subprocess
-│   ├── meta_api_definitions.json  # Curated WhatsApp/Meta/Instagram API definitions (16 entries)
-│   ├── structuring.py             # Gemini Flash normalizes raw text to APIEntry schema
-│   └── scheduler.py               # Orchestrates full pipeline + APScheduler cron
+│   ├── openapi_parser.py              # Fetches and parses OpenAPI specs from GitHub
+│   ├── playwright_scraper.py          # Scrapes non-Meta URLs via Playwright subprocess
+│   ├── meta_api_definitions.json      # Curated WhatsApp/Meta/Instagram definitions (16 entries)
+│   ├── ga4_api_definitions.json       # Curated GA4 Data API + Admin API definitions
+│   ├── meta_ads_api_definitions.json  # Curated Meta Ads / Marketing API definitions
+│   ├── meta_pixel_capi_definitions.json # Curated Meta Pixel + Conversions API definitions
+│   ├── shopify_api_definitions.json   # Curated Shopify Admin API definitions
+│   ├── appsflyer_api_definitions.json # Curated AppsFlyer Pull API definitions
+│   ├── firebase_api_definitions.json  # Curated Firebase Analytics definitions
+│   ├── structuring.py                 # Gemini Flash normalizes raw text to APIEntry schema
+│   └── scheduler.py                   # Orchestrates full pipeline + APScheduler cron
 │
 ├── retrieval/
 │   ├── vector_store.py            # ChromaDB + bge-large + BM25 + RRF hybrid search
@@ -103,9 +112,10 @@ api-rag-v2/
 │   └── reranker.py                # Cross-encoder reranker
 │
 ├── query/
-│   ├── classifier.py              # Keyword heuristic + Gemini Flash → "lookup" or "planning"
+│   ├── classifier.py              # Keyword heuristic + Gemini Flash → "lookup", "planning", or "advisory"
 │   ├── lookup_handler.py          # Hybrid search → rerank → Gemini Flash (1500 token output)
-│   └── planning_handler.py        # Keywords → graph traversal → hybrid search → rerank → Gemini Pro
+│   ├── planning_handler.py        # Keywords → graph traversal → hybrid search → rerank → Gemini Pro
+│   └── advisory_handler.py        # Hybrid search → rerank → Gemini Pro (data engineering expert)
 │
 └── static/
     └── index.html                 # Single-file frontend — HTML + CSS + JS, all SVG icons
@@ -260,6 +270,12 @@ doc_url           str   — source documentation URL
 | WhatsApp | Curated JSON | ingestion/meta_api_definitions.json (7 entries) |
 | Meta Graph API | Curated JSON | ingestion/meta_api_definitions.json (6 entries) |
 | Instagram | Curated JSON | ingestion/meta_api_definitions.json (3 entries) |
+| GA4 | Curated JSON | ingestion/ga4_api_definitions.json (9 entries) |
+| Meta Ads | Curated JSON | ingestion/meta_ads_api_definitions.json (8 entries) |
+| Meta Pixel / CAPI | Curated JSON | ingestion/meta_pixel_capi_definitions.json (7 entries) |
+| Shopify | Curated JSON | ingestion/shopify_api_definitions.json (9 entries) |
+| AppsFlyer | Curated JSON | ingestion/appsflyer_api_definitions.json (6 entries) |
+| Firebase | Curated JSON | ingestion/firebase_api_definitions.json (6 entries) |
 
 ---
 
@@ -373,8 +389,13 @@ for technical documentation retrieval accuracy. bge-large-en-v1.5 is substantial
 **BM25 alongside vectors** — API endpoint paths and parameter names are exact keywords.
 Pure vector search misses exact matches. BM25 catches them. RRF combines both.
 
-**Gemini Pro for planning only** — Pro has stronger multi-hop reasoning for API sequence
-generation. Flash is used everywhere else for speed and cost.
+**Gemini Pro for planning and advisory** — Pro has stronger multi-hop reasoning for API sequence
+generation and data engineering advisory answers. Flash is used everywhere else for speed and cost.
+
+**Advisory handler uses general Gemini knowledge** — Unlike lookup (which only answers from KB context),
+the advisory handler is permitted to use Gemini's general data engineering knowledge alongside KB context.
+This is intentional — advisory questions like "why do Shopify and GA4 numbers differ" require domain
+expertise that cannot be grounded purely in API documentation entries.
 
 **One chunk per endpoint** — each APIEntry represents exactly one API endpoint. Never split
 a single endpoint's documentation across multiple chunks. This is critical for accuracy.
@@ -396,7 +417,10 @@ a single endpoint's documentation across multiple chunks. This is critical for a
 
 1. ~~Fix Playwright scraper~~ — DONE (2026-03-12): replaced with JSON file for Meta, improved Playwright for non-Meta URLs
 2. ~~Remove all emojis from static/index.html~~ — DONE (2026-03-12): replaced with SVGs
-3. Add internal API wrapper entries once user finalises the details
-4. Evaluate planning query accuracy now that all 7 platforms are fully ingested
-5. Evaluate graph relationship density in Neo4j — add manual edges if sparse
-6. Update this HANDOVER.md after each work session
+3. ~~Add advisory query mode~~ — DONE (2026-03-12): third query type covering data engineering advisory, SQL, diagnostics, schema design
+4. ~~Add missing data engineering platforms~~ — DONE (2026-03-12): GA4, Meta Ads, Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase
+5. Trigger full ingestion after startup to populate new platforms into ChromaDB + Neo4j
+6. Add internal API wrapper entries once user finalises the details
+7. Evaluate advisory answer quality on the 50 sample questions (see Data engineer's Assistant sample questions.pdf)
+8. Evaluate graph relationship density in Neo4j — add manual edges if sparse
+9. Update this HANDOVER.md after each work session
