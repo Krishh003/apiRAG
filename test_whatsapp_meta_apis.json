@@ -1,0 +1,114 @@
+[
+  {
+    "name": "WhatsApp Send Text Message",
+    "category": "WhatsApp",
+    "endpoint": "POST /v1/{phone-number-id}/messages",
+    "description": "Sends a plain text message to a WhatsApp user via the WhatsApp Cloud API. Requires a business phone number ID, recipient's phone number in E.164 format, and the message body. Authentication is via a Bearer access token in the Authorization header. Request and response payloads are JSON. Rate limits apply per WABA (WhatsApp Business Account). The system user calling this endpoint must have Partial or Full business asset access to the WABA.",
+    "plain_explanation": "This sends a regular text WhatsApp message from our company's business number to a customer's phone. Think of it like sending a WhatsApp message manually, but done automatically by our system — for example, sending 'Your order has been placed!' right after a customer checks out."
+  },
+  {
+    "name": "WhatsApp Send Template Message",
+    "category": "WhatsApp",
+    "endpoint": "POST /v1/{phone-number-id}/messages (type: template)",
+    "description": "Sends a pre-approved message template to a WhatsApp user. Templates must be submitted and approved by Meta before use. The request includes the template name, language code, and an array of components with variable parameters to fill in placeholders. Used for business-initiated conversations, especially outside the 24-hour customer service window. Supports header, body, and footer components, as well as interactive button types (quick reply, call-to-action).",
+    "plain_explanation": "When we want to message a customer first (not replying to them), WhatsApp requires us to use a pre-approved message template — like a form letter that Meta has already checked and approved. For example, 'Hi {{name}}, your delivery is arriving today between {{time}}.' The placeholders get filled in automatically with real customer data before sending."
+  },
+  {
+    "name": "WhatsApp Send Media Message",
+    "category": "WhatsApp",
+    "endpoint": "POST /v1/{phone-number-id}/messages (type: image/video/document/audio)",
+    "description": "Sends a media message (image, video, audio, or document) to a WhatsApp user. Media can be provided as a publicly accessible URL or as a previously uploaded media ID. Supported formats vary by type: images (JPEG, PNG), videos (MP4, 3GPP), audio (AAC, MP4, AMR, OGG), documents (PDF, DOCX, XLSX, PPTX, TXT). Max file size is 5MB for images, 16MB for audio, 100MB for video and documents.",
+    "plain_explanation": "This sends files to customers over WhatsApp — things like a PDF invoice, a product image, a how-to video, or a voice note. Instead of just text, we can send rich media directly to their WhatsApp chat."
+  },
+  {
+    "name": "WhatsApp Mark Message as Read",
+    "category": "WhatsApp",
+    "endpoint": "PUT /v1/{phone-number-id}/messages",
+    "description": "Marks an incoming WhatsApp message as read, displaying the blue double-tick (read receipt) to the sender. Requires the message ID from the incoming webhook payload. Should be called after processing an inbound message to acknowledge receipt. Does not return a message object — only a success status.",
+    "plain_explanation": "When a customer sends us a WhatsApp message, this API marks it as 'read' — the same as tapping on the message yourself. It makes the two blue ticks appear on the customer's side so they know we've seen their message. Typically our system does this automatically once it has processed the customer's message."
+  },
+  {
+    "name": "WhatsApp Webhooks — Inbound Messages",
+    "category": "WhatsApp",
+    "endpoint": "POST (incoming) — configured in Meta App Dashboard",
+    "description": "WhatsApp sends real-time HTTP POST notifications to a configured webhook URL whenever events occur — including incoming messages, message status updates (sent, delivered, read, failed), and account-level alerts. The payload is a JSON object containing the phone number ID, contact details, message content, and timestamp. A 200 OK response must be returned within 20 seconds or WhatsApp will retry the webhook delivery.",
+    "plain_explanation": "Instead of our system constantly checking 'did we get a new message?', WhatsApp calls our server the moment something happens — like a customer replies, or a message we sent was delivered or read. It's like WhatsApp tapping our shoulder in real time rather than us repeatedly asking 'any news yet?'"
+  },
+  {
+    "name": "WhatsApp Upload Media",
+    "category": "WhatsApp",
+    "endpoint": "POST /v1/{phone-number-id}/media",
+    "description": "Uploads a media file to Meta's servers and returns a media ID that can be reused across multiple message sends. Reduces bandwidth by avoiding repeated uploads of the same file. Accepts multipart/form-data with the file and its MIME type. The returned media ID is valid and reusable until the file is deleted. Uploading the same file multiple times generates different media IDs.",
+    "plain_explanation": "If we want to send the same file (like our company brochure) to hundreds of customers, this API uploads it once to WhatsApp's servers and gives us a reference ID. We then use that ID to send the file to anyone without re-uploading it each time — saving time and data."
+  },
+  {
+    "name": "WhatsApp Message Templates — Create",
+    "category": "WhatsApp",
+    "endpoint": "POST /v1/{whatsapp-business-account-id}/message_templates",
+    "description": "Creates a new message template for a WhatsApp Business Account. Templates must include a name, category (UTILITY, MARKETING, or AUTHENTICATION), language, and components (header, body, footer, buttons). Template names must be lowercase with underscores, globally unique per WABA. After submission, templates enter a review queue and Meta approves or rejects within 24 hours. Rate limit: 200 calls/hour per app per WABA (5000/hour for active WABAs).",
+    "plain_explanation": "This creates a new message template that we want to use for bulk customer messaging. We write the message (e.g., an order confirmation), submit it to Meta for approval, and once approved, we can use it to send that message to any number of customers. Think of it as getting a standardised letter pre-approved before mass-mailing it."
+  },
+  {
+    "name": "Meta Graph API — Get Facebook Page Info",
+    "category": "Meta",
+    "endpoint": "GET /v23.0/{page-id}",
+    "description": "Retrieves public and business information about a Facebook Page, including name, category, fan count, verification status, website, phone, hours of operation, and location. Requires a Page access token or User access token with pages_read_engagement permission. Supports field selection using the ?fields= query parameter to limit response size. Part of the Meta Graph API v23.0 (latest as of May 2025).",
+    "plain_explanation": "This fetches basic information about one of our Facebook Pages — like its name, how many followers it has, its category, and contact details. Useful when we want to display our Facebook Page details inside our own apps or dashboards without a user having to check Facebook manually."
+  },
+  {
+    "name": "Meta Graph API — Get Page Posts",
+    "category": "Meta",
+    "endpoint": "GET /v23.0/{page-id}/posts",
+    "description": "Returns a paginated list of posts published to a Facebook Page, including post ID, message text, created time, and story. Supports time-based filtering with since and until Unix timestamp parameters. Requires pages_read_engagement permission. Results are paginated using cursor-based pagination — the response includes a paging.cursors object with before and after values for navigating results.",
+    "plain_explanation": "This pulls all the posts we've published on our Facebook Page. We use it to build reports on what we've been posting, analyse engagement history, or display our Facebook feed inside our own tools. Results come in batches (pages), so we load them a chunk at a time."
+  },
+  {
+    "name": "Meta Graph API — Page Insights",
+    "category": "Meta",
+    "endpoint": "GET /v23.0/{page-id}/insights",
+    "description": "Returns aggregated metrics about a Facebook Page's performance including impressions, reach, page views, fan growth, and engagement. Supports metric-specific queries (e.g. page_impressions, page_engaged_users), period granularity (day, week, days_28, month, lifetime), and date range filtering. Requires pages_read_engagement and read_insights permissions.",
+    "plain_explanation": "This gives us the numbers behind our Facebook Page — how many people saw our posts, how many new followers we got, how many people visited our page, and how many interacted with our content. It's the data behind the reports we use to understand how our Facebook presence is performing."
+  },
+  {
+    "name": "Meta Marketing API — Create Ad Campaign",
+    "category": "Meta",
+    "endpoint": "POST /v23.0/act_{ad-account-id}/campaigns",
+    "description": "Creates a new ad campaign under a Meta Ad Account. Required fields include name, objective (e.g. OUTCOME_TRAFFIC, OUTCOME_LEADS, OUTCOME_SALES, OUTCOME_APP_INSTALLS), status (ACTIVE or PAUSED), and special_ad_categories (empty array if none apply). From API v21.0+, only simplified objectives are supported for new campaigns. The campaign forms the top level of the Meta ad structure: Campaign → Ad Set → Ad.",
+    "plain_explanation": "This creates a new advertising campaign on Facebook and Instagram — the top-level container that defines what we're trying to achieve, like getting more website visitors, generating leads, or driving purchases. Everything else (the audience, the budget, the actual ad) sits inside this campaign."
+  },
+  {
+    "name": "Meta Marketing API — Ad Insights",
+    "category": "Meta",
+    "endpoint": "GET /v23.0/{ad-id}/insights",
+    "description": "Returns performance metrics for a specific ad, ad set, campaign, or ad account. Over 70 metrics available including impressions, reach, clicks, spend, CTR, CPM, CPC, ROAS, conversions, and video views. Supports breakdowns by age, gender, country, placement, device, and time. Supports attribution windows (1d_click, 7d_click, 28d_click, 1d_view). Results can be requested synchronously (small date ranges) or asynchronously via the Async Job system for large datasets.",
+    "plain_explanation": "This tells us exactly how our ads are performing — how many people saw them, how many clicked, how much we spent, and how many purchases or sign-ups resulted. It's the data that feeds our ad performance reports. We can break it down by age group, country, device, and many other dimensions to understand who our ads are reaching."
+  },
+  {
+    "name": "Meta Marketing API — Create Ad Set",
+    "category": "Meta",
+    "endpoint": "POST /v23.0/act_{ad-account-id}/adsets",
+    "description": "Creates an ad set within a campaign, defining the audience, budget, schedule, placement, and bidding strategy. Key fields include campaign_id, daily_budget or lifetime_budget (in smallest currency unit, e.g. paise), targeting (age range, geolocations, interests, behaviours, custom audiences), billing_event, optimization_goal, bid_strategy, and start_time/end_time. From v23.0, the advantage_audience parameter defaults to 1 for targeting automation.",
+    "plain_explanation": "An ad set is where we decide who sees our ad, how much we spend per day, and when the ad runs. This API creates one of those. For example: 'Show this ad to women aged 25-45 in Mumbai, spend up to ₹500/day, run from Monday to Friday.' Each campaign can have multiple ad sets targeting different audiences."
+  },
+  {
+    "name": "Instagram Graph API — Get Media",
+    "category": "Instagram",
+    "endpoint": "GET /v23.0/{ig-media-id}",
+    "description": "Retrieves details about a specific Instagram media object (post, reel, story, or carousel). Fields include id, caption, media_type, media_url, thumbnail_url (for videos), timestamp, permalink, like_count, and comments_count. Requires instagram_basic or pages_read_engagement permission. Media URLs returned are temporary and expire after a short period — not suitable for long-term storage.",
+    "plain_explanation": "This fetches the details of a specific Instagram post, reel, or story — things like its caption, when it was posted, and how many likes it got. Useful when we want to display Instagram content inside our own dashboards or pull post-level data for reporting."
+  },
+  {
+    "name": "Instagram Graph API — Account Insights",
+    "category": "Instagram",
+    "endpoint": "GET /v23.0/{ig-user-id}/insights",
+    "description": "Returns performance metrics for an Instagram Business or Creator account, including impressions, reach, profile views, website clicks, and follower demographics. Metrics are broken down by period (day, week, month, lifetime). From API v21.0, several legacy metrics were deprecated: impressions_unique, reach and profile_views were consolidated. Instagram User IDs are being replaced with IG User IDs in v23.0+.",
+    "plain_explanation": "This gives us performance data for our Instagram account — how many accounts we reached, how many profile visits we got, and how many people clicked through to our website. Used to track how our Instagram presence is growing and which content is driving the most attention."
+  },
+  {
+    "name": "Instagram Graph API — Publish Media",
+    "category": "Instagram",
+    "endpoint": "POST /v23.0/{ig-user-id}/media + POST /v23.0/{ig-user-id}/media_publish",
+    "description": "Two-step process to publish a post to Instagram. Step 1: Create a media container by POSTing the image_url or video_url, caption, and optional location data to the /media endpoint — returns a creation_id. Step 2: Publish by POSTing the creation_id to /media_publish. For carousel posts, each item must be uploaded individually first. Rate limit: 25 posts per 24-hour period per Instagram account.",
+    "plain_explanation": "Publishing a post to Instagram via API is a two-step process: first we upload the photo or video and write the caption, then we send a second request to actually make it go live. It's like drafting a post and then hitting 'Share'. Our system uses this to schedule and auto-publish content to our Instagram accounts."
+  }
+]

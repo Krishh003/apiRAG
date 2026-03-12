@@ -1,0 +1,41 @@
+Name: WhatsApp Get Business Profile
+Category: WhatsApp
+Endpoint: GET /v1/{phone-number-id}/whatsapp_business_profile
+Description: Retrieves the WhatsApp Business Profile for a given phone number, including display name, description, email, website URLs, address, and profile picture URL. The profile is what customers see when they open a conversation with the business on WhatsApp. Fields can be selectively requested using the fields query parameter.
+Plain Explanation: This fetches our company's WhatsApp Business profile — the information customers see when they open our chat, like our business name, description, website, and profile picture. We use it to check or display what our WhatsApp presence looks like from a customer's perspective.
+
+Name: Meta Graph API — Delete Comment
+Category: Meta
+Endpoint: DELETE /v23.0/{comment-id}
+Description: Deletes a comment on a Facebook Page post by its comment ID. Requires the pages_manage_engagement permission and a valid Page access token. The API returns a JSON object with a success boolean. Moderation can also be done in bulk using the batch request feature of the Graph API. Comments made by the Page itself can always be deleted; comments from other users require the page to have admin access.
+Plain Explanation: This deletes a comment from one of our Facebook Page posts. We use it in our content moderation system — for example, automatically removing spam comments or offensive content flagged by our team. The system can delete comments without anyone having to log into Facebook manually.
+
+Name: Stripe Create Subscription
+Category: Payments
+Endpoint: POST /v1/subscriptions
+Description: Creates a recurring subscription for a customer against a price or plan. Required fields include customer (Stripe customer ID) and items array with price IDs. Optional fields include trial_period_days, billing_cycle_anchor, coupon, metadata, and payment_settings. The subscription automatically creates invoices and charges the customer's default payment method on each billing cycle. Returns a Subscription object with status (active, trialing, past_due, canceled, incomplete).
+Plain Explanation: This sets up a recurring payment for a customer — like a monthly or yearly subscription. Once created, Stripe automatically charges the customer's card every billing cycle without us having to do anything. We use it for any subscription-based products or services. The status field tells us whether the subscription is active, on trial, or has a payment problem.
+
+Name: SendGrid Unsubscribe Group — Add Recipients
+Category: Email
+Endpoint: POST /v3/asm/groups/{group_id}/suppressions
+Description: Adds one or more email addresses to a suppression group (unsubscribe list), preventing future emails of that category from being sent to those addresses. Groups represent categories of email (e.g. marketing, weekly newsletter, product updates). Required fields include the group_id in the URL and a recipient_emails array in the body. Adding an address to a suppression group is permanent unless explicitly removed.
+Plain Explanation: When a customer clicks 'Unsubscribe' from a specific type of email (like our marketing newsletter), this API records that preference so we never send them that type of email again. It's how we respect customer preferences and stay compliant with email laws. Each type of email (marketing, product updates, etc.) has its own separate unsubscribe list.
+
+Name: Twilio Verify — Send OTP
+Category: SMS
+Endpoint: POST /v2/Services/{ServiceSid}/Verifications
+Description: Sends a one-time passcode (OTP) to a user via SMS, WhatsApp, email, or voice call for identity verification. Required fields include To (phone number or email) and Channel (sms, whatsapp, email, or call). The service automatically generates a 6-digit code, sends it, and manages expiry (default 10 minutes). Part of the Twilio Verify product — distinct from the base Messaging API. Rate limited to prevent abuse.
+Plain Explanation: This sends a one-time verification code (OTP) to a customer — the 6-digit code they enter to prove they own a phone number or email address. We use it during sign-up, login, or when a customer makes a sensitive change like updating their password. Twilio generates the code, sends it, and checks whether the customer entered the right one.
+
+Name: Twilio Verify — Check OTP
+Category: SMS
+Endpoint: POST /v2/Services/{ServiceSid}/VerificationCheck
+Description: Verifies that a user has entered the correct OTP sent by the Verify Send endpoint. Required fields include To (the same phone number or email the code was sent to) and Code (the value entered by the user). Returns a verification object with status: approved or pending. An approved status confirms the user's identity. Codes expire after 10 minutes and are invalidated after 5 failed attempts.
+Plain Explanation: After the customer receives their OTP and types it in, this API checks whether what they entered matches what was sent. If it matches, we know the customer really owns that phone number or email. If they enter the wrong code too many times (5 attempts), we automatically block further tries to prevent fraud.
+
+Name: Google Maps Places Autocomplete
+Category: Maps
+Endpoint: GET /maps/api/place/autocomplete/json
+Description: Returns place predictions as a user types an address or location query, enabling real-time address autocomplete in search boxes and forms. Accepts an input string, types filter (geocode, address, establishment, etc.), and optional location and radius for biasing results. Returns an array of predictions each with a place_id, description, and structured_formatting object. The place_id can then be used with the Place Details API to fetch full address components. Billed per session (not per keystroke) using the session token pattern.
+Plain Explanation: This powers the 'start typing an address and suggestions appear' feature in our forms. When a customer starts typing their delivery address, this API suggests matching real addresses in real time so they can select the right one quickly. It reduces errors from people mistyping addresses and makes the checkout experience faster.

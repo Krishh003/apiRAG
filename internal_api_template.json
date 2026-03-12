@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Internal — Example Wrapper Name",
+    "platform": "Internal",
+    "category": "Your Category",
+    "method": "POST",
+    "endpoint": "/internal/your-endpoint",
+    "base_url": "https://your-internal-server.company.com",
+    "auth": "Internal service token (X-Service-Key header)",
+    "description": "Technical description of what this internal wrapper does, what external API it wraps, and any custom logic it adds.",
+    "plain_explanation": "Plain English: what this wrapper does for the business, and when the team would use it.",
+    "is_internal": true,
+    "internal_notes": "Environment-specific notes, e.g. prod URL vs staging URL, rate limits, who owns this wrapper."
+  }
+]
