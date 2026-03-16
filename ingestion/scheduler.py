@@ -2,8 +2,8 @@
 Ingestion Scheduler — orchestrates the full ingestion pipeline.
 
 Runs:
-  1. OpenAPI parser  (Twilio, SendGrid, Stripe, Google Maps)
-  2. Curated JSON definitions (WhatsApp/Meta/Instagram, GA4, Meta Ads,
+  1. OpenAPI parser  (Twilio, SendGrid, Stripe, Google Maps, WhatsApp)
+  2. Curated JSON definitions (Meta/Instagram, GA4, Meta Ads,
      Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase)
   3. Structuring/enrichment via Gemini Flash (OpenAPI entries only)
   4. Push to ChromaDB (vector store)
@@ -41,45 +41,52 @@ scrape_status: Dict[str, Any] = {
 JSON_DEFINITION_FILES = [
     {
         "filename": "meta_api_definitions.json",
-        "platforms": {"WhatsApp", "Meta", "Instagram"},
+        "platforms": {"Meta", "Instagram"},
         "default_base_url": "https://graph.facebook.com",
         "default_auth": "Bearer token",
+        "default_version": "v23.0",
     },
     {
         "filename": "ga4_api_definitions.json",
         "platforms": {"GA4"},
         "default_base_url": "https://analyticsdata.googleapis.com",
         "default_auth": "OAuth 2.0 Service Account",
+        "default_version": "v1beta",
     },
     {
         "filename": "meta_ads_api_definitions.json",
         "platforms": {"Meta Ads"},
         "default_base_url": "https://graph.facebook.com",
         "default_auth": "System User access token with ads_read permission",
+        "default_version": "v23.0",
     },
     {
         "filename": "meta_pixel_capi_definitions.json",
         "platforms": {"Meta Pixel"},
         "default_base_url": "https://graph.facebook.com",
         "default_auth": "Meta Pixel ID / System User access token",
+        "default_version": "v23.0",
     },
     {
         "filename": "shopify_api_definitions.json",
         "platforms": {"Shopify"},
         "default_base_url": "https://{store-name}.myshopify.com",
         "default_auth": "Admin API access token in X-Shopify-Access-Token header",
+        "default_version": "2024-10",
     },
     {
         "filename": "appsflyer_api_definitions.json",
         "platforms": {"AppsFlyer"},
         "default_base_url": "https://hq1.appsflyer.com",
         "default_auth": "API V2 token in Authorization header",
+        "default_version": "v5",
     },
     {
         "filename": "firebase_api_definitions.json",
         "platforms": {"Firebase"},
         "default_base_url": "https://firebase.google.com",
         "default_auth": "Firebase App credentials",
+        "default_version": "SDK",
     },
 ]
 
@@ -113,11 +120,11 @@ class IngestionScheduler:
         counts: Dict[str, int] = {}
 
         try:
-            # ── Step 1: OpenAPI sources (Twilio, SendGrid, Stripe, Maps) ─────
+            # ── Step 1: OpenAPI sources (Twilio, SendGrid, Stripe, Maps, WhatsApp) ──
             openapi_platforms = None
             if platforms:
                 openapi_platforms = [p for p in platforms
-                                     if p in ("Twilio", "SendGrid", "Stripe", "Google Maps")]
+                                     if p in ("Twilio", "SendGrid", "Stripe", "Google Maps", "WhatsApp")]
 
             if not platforms or openapi_platforms:
                 logger.info("Starting OpenAPI ingestion...")
@@ -131,7 +138,7 @@ class IngestionScheduler:
                 logger.info(f"OpenAPI ingestion complete: {len(openapi_entries)} entries")
 
             # ── Step 2: Curated JSON definition files ─────────────────────────
-            #   Covers: WhatsApp/Meta/Instagram, GA4, Meta Ads, Meta Pixel/CAPI,
+            #   Covers: Meta/Instagram, GA4, Meta Ads, Meta Pixel/CAPI,
             #           Shopify, AppsFlyer, Firebase
             for file_config in JSON_DEFINITION_FILES:
                 file_platforms = file_config["platforms"]
@@ -143,6 +150,7 @@ class IngestionScheduler:
                         platforms=platforms,
                         default_base_url=file_config["default_base_url"],
                         default_auth=file_config["default_auth"],
+                        default_version=file_config["default_version"],
                     )
                     all_entries.extend(entries)
                     key = file_config["filename"].replace(".json", "")
@@ -190,6 +198,7 @@ class IngestionScheduler:
         platforms: Optional[List[str]] = None,
         default_base_url: str = "",
         default_auth: str = "See documentation",
+        default_version: str = "",
     ) -> List[APIEntry]:
         """
         Generic loader for curated API definition JSON files.
@@ -233,6 +242,7 @@ class IngestionScheduler:
                 name=obj.get("name", "Unknown"),
                 platform=platform,
                 category=raw_category,
+                version=obj.get("version", default_version),
                 method=method,
                 endpoint=endpoint_path,
                 base_url=obj.get("base_url", default_base_url),

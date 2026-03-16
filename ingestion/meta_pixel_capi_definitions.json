@@ -2,6 +2,7 @@
   {
     "name": "Meta Pixel — Client-Side Tracking Overview",
     "category": "Meta Pixel",
+    "version": "fbq-2024",
     "endpoint": "client-side JavaScript — fbq() function",
     "base_url": "https://connect.facebook.net/en_US/fbevents.js",
     "auth": "Meta Pixel ID (numeric string, e.g. 1234567890)",
@@ -11,6 +12,7 @@
   {
     "name": "Meta Pixel — Purchase Event",
     "category": "Meta Pixel",
+    "version": "fbq-2024",
     "endpoint": "client-side: fbq('track', 'Purchase', {parameters})",
     "base_url": "https://connect.facebook.net/en_US/fbevents.js",
     "auth": "Meta Pixel ID",
@@ -20,6 +22,7 @@
   {
     "name": "Meta Pixel — AddToCart Event",
     "category": "Meta Pixel",
+    "version": "fbq-2024",
     "endpoint": "client-side: fbq('track', 'AddToCart', {parameters})",
     "base_url": "https://connect.facebook.net/en_US/fbevents.js",
     "auth": "Meta Pixel ID",
@@ -29,6 +32,7 @@
   {
     "name": "Meta Pixel — InitiateCheckout Event",
     "category": "Meta Pixel",
+    "version": "fbq-2024",
     "endpoint": "client-side: fbq('track', 'InitiateCheckout', {parameters})",
     "base_url": "https://connect.facebook.net/en_US/fbevents.js",
     "auth": "Meta Pixel ID",
@@ -38,6 +42,7 @@
   {
     "name": "Meta Conversions API (CAPI) — Send Server Events",
     "category": "Meta Pixel",
+    "version": "v23.0",
     "endpoint": "POST /v23.0/{pixel-id}/events",
     "base_url": "https://graph.facebook.com",
     "auth": "System User access token with ads_management permission",
@@ -47,6 +52,7 @@
   {
     "name": "Meta Pixel + CAPI — Event Deduplication",
     "category": "Meta Pixel",
+    "version": "v23.0",
     "endpoint": "parameter reference — event_id field",
     "base_url": "https://graph.facebook.com",
     "auth": "Meta Pixel ID + System User access token",
@@ -56,6 +62,7 @@
   {
     "name": "Meta Pixel — Customer Information Hashing for CAPI",
     "category": "Meta Pixel",
+    "version": "v23.0",
     "endpoint": "parameter reference — user_data object in CAPI events",
     "base_url": "https://graph.facebook.com",
     "auth": "System User access token",

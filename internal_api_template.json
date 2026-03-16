@@ -3,6 +3,7 @@
     "name": "Internal — Example Wrapper Name",
     "platform": "Internal",
     "category": "Your Category",
+    "version": "v1",
     "method": "POST",
     "endpoint": "/internal/your-endpoint",
     "base_url": "https://your-internal-server.company.com",

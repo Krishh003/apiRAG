@@ -63,7 +63,7 @@ class Reranker:
             return results[:top_k]
 
         # Build (query, document) pairs for the cross-encoder
-        pairs = [(query, r["document"][:512]) for r in results]
+        pairs = [(r.get("match_query", query), r["document"][:512]) for r in results]
 
         try:
             scores = model.predict(pairs)
@@ -71,9 +71,10 @@ class Reranker:
             logger.error(f"Reranker predict failed: {e}")
             return results[:top_k]
 
-        # Attach rerank scores
+        # Attach rerank scores — apply sigmoid to convert raw logits → [0, 1]
+        import math
         for result, score in zip(results, scores):
-            result["rerank_score"] = float(score)
+            result["rerank_score"] = round(1 / (1 + math.exp(-float(score))), 4)
 
         # Sort by rerank score descending and return top_k
         reranked = sorted(results, key=lambda x: x.get("rerank_score", 0), reverse=True)

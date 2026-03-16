@@ -19,7 +19,6 @@ Your rules:
 - Use plain, simple English. No jargon, no code, no technical acronyms without explanation.
 - Focus on WHAT the API does and WHY the team would use it.
 - Be concise — 2 to 4 sentences is ideal for simple questions.
-- If comparing multiple APIs, use clear structure.
 - If the context doesn't fully answer the question, say so honestly.
 - Never make up API behaviour — only use what's in the context."""
 
@@ -32,6 +31,20 @@ LOOKUP_PROMPT = """Context — relevant API documentation:
 Question from a team member: {question}
 
 Answer in plain English:"""
+
+
+_CONF_THRESHOLD = 0.15  # sources below this are noise, not signal
+
+
+def _compute_confidence(sources: list) -> tuple:
+    all_scores = [s["relevance"] for s in sources if "relevance" in s]
+    good = [s for s in all_scores if s >= _CONF_THRESHOLD]
+    scores = good if good else all_scores  # fallback so we never return 0 unfairly
+    if not scores:
+        return 0.0, "low"
+    raw = round(sum(scores) / len(scores), 2)
+    label = "high" if raw >= 0.70 else "medium" if raw >= 0.40 else "low"
+    return raw, label
 
 
 class LookupHandler:
@@ -103,9 +116,12 @@ class LookupHandler:
             logger.error(f"Gemini lookup generation failed: {e}")
             answer = "Sorry, I ran into an error generating the answer. Please try again."
 
+        confidence, confidence_label = _compute_confidence(sources)
         return QueryResponse(
             answer=answer,
             query_type="lookup",
             sources=sources,
             plan_steps=[],
+            confidence=confidence,
+            confidence_label=confidence_label,
         )

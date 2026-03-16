@@ -2,6 +2,7 @@
   {
     "name": "Meta Ads API — Get Ad Account Insights",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "GET /v23.0/{ad-account-id}/insights",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",
@@ -11,6 +12,7 @@
   {
     "name": "Meta Ads API — Get Campaign Insights",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "GET /v23.0/{campaign-id}/insights",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",
@@ -20,6 +22,7 @@
   {
     "name": "Meta Ads API — List Campaigns",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "GET /v23.0/{ad-account-id}/campaigns",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",
@@ -29,6 +32,7 @@
   {
     "name": "Meta Ads API — List Ad Sets",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "GET /v23.0/{ad-account-id}/adsets",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",
@@ -38,6 +42,7 @@
   {
     "name": "Meta Ads API — List Ads",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "GET /v23.0/{ad-account-id}/ads",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",
@@ -47,6 +52,7 @@
   {
     "name": "Meta Ads API — Attribution Window Settings",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "parameter reference — used in insights requests",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",
@@ -56,6 +62,7 @@
   {
     "name": "Meta Ads API — Async Insights Jobs",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "POST /v23.0/{ad-account-id}/insights (async=true)",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",
@@ -65,6 +72,7 @@
   {
     "name": "Meta Ads API — Incremental Data Pull Strategy",
     "category": "Meta Ads",
+    "version": "v23.0",
     "endpoint": "parameter reference — time_range and date_preset",
     "base_url": "https://graph.facebook.com",
     "auth": "User access token or System User access token with ads_read permission",

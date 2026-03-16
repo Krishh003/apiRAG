@@ -19,37 +19,43 @@ Deployed on: internal company server (Docker available). Currently being tested 
 
 ---
 
-## Current State (as of 2026-03-12)
+## Current State (as of 2026-03-13)
 
 ### What is working
 
 - FastAPI backend starts and runs correctly
-- ChromaDB vector store initialises with bge-large-en-v1.5 embeddings
-- Neo4j graph store connects via Docker (bolt://localhost:7687)
+- ChromaDB vector store initialises with bge-large-en-v1.5 embeddings — **177 entries across 12 platforms** currently loaded (re-ingest required to pick up WhatsApp OpenAPI + expanded Meta/Instagram entries)
+- Neo4j graph store connects via Docker (bolt://localhost:7687) — all 177 entries ingested
 - BM25 hybrid search + Reciprocal Rank Fusion implemented
 - Cross-encoder reranker implemented
 - Query classifier (lookup vs planning vs advisory) working — three-way classification
 - Lookup handler working (Gemini 2.5 Flash, max_output_tokens: 1500, context: 1500 chars/source)
 - Planning handler working (Gemini 2.5 Pro + graph traversal)
-- Advisory handler working (Gemini 2.5 Pro, data engineering expert system prompt, KB context as grounding)
-- OpenAPI ingestion pipeline working — Twilio, SendGrid, Stripe, Google Maps parse correctly from GitHub specs
-- Meta/WhatsApp/Instagram ingestion working — loaded from curated JSON definitions (16 entries)
-- GA4, Meta Ads, Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase — curated JSON definitions added
+- Advisory handler working (Gemini 2.5 Pro, plain-English expert system prompt targeting non-technical users, KB context as grounding)
+- OpenAPI ingestion pipeline working — Twilio, SendGrid, Stripe, Google Maps, **WhatsApp** parse correctly from GitHub specs
+- WhatsApp ingestion upgraded — now parsed from Meta's official OpenAPI spec (github.com/facebook/openapi, v23.0) instead of hand-curated JSON entries
+- Meta Graph API + Instagram ingestion working — curated JSON (13 entries, expanded from 9)
+- GA4, Meta Ads, Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase — curated JSON definitions ingested and live
 - Manual API entry via POST /api/apis working
-- File upload (.json, .csv, .txt, .pdf) working
+- File upload (.json, .csv, .txt, .pdf, .md) working — exposed in frontend via Upload File tab
 - Single-URL scraping via "From Website" modal (Playwright, improved selectors)
 - APScheduler weekly scrape cron running
-- Frontend UI running at localhost:8000 — all emojis replaced with SVGs, advisory badge added
+- Frontend UI running at localhost:8000 — all emojis replaced with SVGs, advisory badge (violet) added, Upload File tab added to Add API modal
 
 ### What is NOT working / in progress
+
+**Re-ingestion needed** — the WhatsApp OpenAPI parser and expanded Meta/Instagram JSON entries
+are in place but ChromaDB + Neo4j still hold the old 177 entries. Trigger POST /admin/scrape
+to reload everything and pick up the changes.
 
 **Internal API wrappers** — user confirmed they have internal API wrappers but details are
 not yet finalised. A template file internal_api_template.json exists for when they are ready.
 
 **Playwright scraper does not work on Meta's developer docs** — Meta blocks all headless
-browsers at the network level (connection times out). This was resolved by switching Meta
-platforms to a curated JSON file (ingestion/meta_api_definitions.json). The Playwright
-scraper still works for non-Meta URLs via the "From Website" single-URL feature.
+browsers at the network level (connection times out). WhatsApp is now handled via Meta's
+official OpenAPI spec instead. Meta Graph, Instagram, Ads, and Pixel still use curated JSON
+as Meta has not published official OpenAPI specs for those APIs. The Playwright scraper still
+works for non-Meta URLs via the "From Website" single-URL feature.
 
 ---
 
@@ -96,7 +102,7 @@ api-rag-v2/
 ├── ingestion/
 │   ├── openapi_parser.py              # Fetches and parses OpenAPI specs from GitHub
 │   ├── playwright_scraper.py          # Scrapes non-Meta URLs via Playwright subprocess
-│   ├── meta_api_definitions.json      # Curated WhatsApp/Meta/Instagram definitions (16 entries)
+│   ├── meta_api_definitions.json      # Curated Meta Graph + Instagram definitions (13 entries — WhatsApp removed, now uses OpenAPI spec)
 │   ├── ga4_api_definitions.json       # Curated GA4 Data API + Admin API definitions
 │   ├── meta_ads_api_definitions.json  # Curated Meta Ads / Marketing API definitions
 │   ├── meta_pixel_capi_definitions.json # Curated Meta Pixel + Conversions API definitions
@@ -184,7 +190,7 @@ and uses completely different parameter syntax.
 | DELETE | /api/apis/{id} | Delete an API |
 | GET | /api/platforms | List platform names |
 | GET | /api/categories | List category names |
-| POST | /api/upload | Bulk import from .json/.csv/.txt/.pdf |
+| POST | /api/upload | Bulk import from .json/.csv/.txt/.pdf/.md |
 | POST | /admin/scrape | Trigger ingestion pipeline (background) |
 | GET | /admin/scrape/status | Scrape job status |
 | GET | /health | System health check |
@@ -205,7 +211,7 @@ and uses completely different parameter syntax.
 ```json
 {
   "answer": "...",
-  "query_type": "lookup | planning",
+  "query_type": "lookup | planning | advisory",
   "sources": [
     {
       "name": "Stripe Create Payment Intent",
@@ -267,15 +273,21 @@ doc_url           str   — source documentation URL
 | SendGrid | OpenAPI YAML | github.com/twilio/sendgrid-oai — oai.yaml |
 | Stripe | OpenAPI JSON | github.com/stripe/openapi — spec3.json |
 | Google Maps | Manual definitions | 5 endpoints hardcoded in openapi_parser.py |
-| WhatsApp | Curated JSON | ingestion/meta_api_definitions.json (7 entries) |
-| Meta Graph API | Curated JSON | ingestion/meta_api_definitions.json (6 entries) |
-| Instagram | Curated JSON | ingestion/meta_api_definitions.json (3 entries) |
+| WhatsApp | **OpenAPI YAML** | **github.com/facebook/openapi — business-messaging-api_v23.0.yaml** (22 filtered paths, Gemini-enriched) |
+| Meta Graph API | Curated JSON | ingestion/meta_api_definitions.json (9 entries) |
+| Instagram | Curated JSON | ingestion/meta_api_definitions.json (4 entries) |
 | GA4 | Curated JSON | ingestion/ga4_api_definitions.json (9 entries) |
 | Meta Ads | Curated JSON | ingestion/meta_ads_api_definitions.json (8 entries) |
 | Meta Pixel / CAPI | Curated JSON | ingestion/meta_pixel_capi_definitions.json (7 entries) |
 | Shopify | Curated JSON | ingestion/shopify_api_definitions.json (9 entries) |
 | AppsFlyer | Curated JSON | ingestion/appsflyer_api_definitions.json (6 entries) |
 | Firebase | Curated JSON | ingestion/firebase_api_definitions.json (6 entries) |
+
+**Why curated JSON for Meta Graph / Instagram / Ads / Pixel but OpenAPI for WhatsApp?**
+Meta published an official OpenAPI repository (github.com/facebook/openapi) in late 2025.
+As of 2026-03-13 it contains exactly one spec: `business-messaging-api_v23.0.yaml` covering
+the WhatsApp Cloud API. No official specs exist for Meta Graph, Instagram, Ads, or Pixel —
+those platforms use curated JSON until Meta publishes specs for them.
 
 ---
 
@@ -287,13 +299,25 @@ Root cause: Meta's developer site blocks all headless browsers at the network le
 Even with a realistic Chrome user-agent and domcontentloaded wait strategy,
 page.goto() times out on all Meta/WhatsApp/Instagram doc URLs.
 
-Resolution: Replaced Playwright scraping for Meta platforms with a curated JSON file
-(ingestion/meta_api_definitions.json) containing 16 hand-written API definitions
-(7 WhatsApp, 6 Meta, 3 Instagram). The scheduler's _load_meta_definitions() method
-reads this file during ingestion. Verified: all 16 entries load into ChromaDB and Neo4j.
+Initial resolution (2026-03-12): Replaced Playwright scraping for all Meta platforms with
+a curated JSON file (ingestion/meta_api_definitions.json) containing 16 hand-written API
+definitions (7 WhatsApp, 6 Meta, 3 Instagram).
+
+Further resolution (2026-03-13): Discovered that Meta published an official OpenAPI repository
+(github.com/facebook/openapi). Migrated WhatsApp to the official spec
+(business-messaging-api_v23.0.yaml, OpenAPI 3.1.0). WhatsApp is now parsed and Gemini-enriched
+via openapi_parser.parse_meta_whatsapp() exactly like Twilio/Stripe. The 7 hand-written
+WhatsApp entries were removed from meta_api_definitions.json to avoid duplication.
+Meta Graph, Instagram, Ads, and Pixel remain as curated JSON — Meta has not published
+OpenAPI specs for those APIs as of 2026-03-13.
+
+meta_api_definitions.json was also expanded from 9 to 13 entries (added: GET /me, GET
+/{page-id}/conversations, GET /{video-id}/insights, GET /{ig-user-id}, GET
+/{ig-hashtag-id}/recent_media).
 
 The Playwright scraper is still used for single-URL scraping ("From Website" modal)
 on non-Meta sites, with the following improvements applied:
+
 - Realistic Chrome user-agent + 1920x1080 viewport
 - Heading selectors expanded from h2/h3 to h1/h2/h3/h4
 - Container-based fallback extraction (article, main, [role=main], .content)
@@ -302,6 +326,7 @@ on non-Meta sites, with the following improvements applied:
 ### Resolved — Frontend had emojis (2026-03-12)
 
 All emoji/Unicode characters removed from static/index.html and replaced with inline SVGs:
+
 - Platform filter close button (was Unicode cross)
 - Scrape status indicators (were Unicode symbols for progress, success, failure)
 Verified via regex grep: zero emoji/Unicode characters remain.
@@ -328,14 +353,25 @@ If low, add relationships manually via POST /api/apis.
 
 ```
 GitHub OpenAPI specs → openapi_parser.py → APIEntry list
-                                         → Gemini Flash enrichment (plain_explanation + relationships)
-                                         → ChromaDB upsert
-                                         → Neo4j upsert
+  (Twilio × 3 specs)                     → Gemini Flash enrichment (plain_explanation + relationships)
+  (SendGrid × 1 spec)                    → ChromaDB upsert
+  (Stripe × 1 spec)                      → Neo4j upsert
+  (Google Maps — manual definitions)
+  (WhatsApp — github.com/facebook/openapi, business-messaging-api_v23.0.yaml, 22 filtered paths)
 
-meta_api_definitions.json → scheduler._load_meta_definitions()
-                          → APIEntry list (16 entries)
-                          → ChromaDB upsert
-                          → Neo4j upsert
+*_api_definitions.json → scheduler._load_json_definitions()  (one call per file, looped)
+                       → APIEntry list
+                       → ChromaDB upsert
+                       → Neo4j upsert
+
+  Files loaded (in order):
+    meta_api_definitions.json          (13 entries — Meta Graph × 9, Instagram × 4)
+    ga4_api_definitions.json           (9 entries)
+    meta_ads_api_definitions.json      (8 entries)
+    meta_pixel_capi_definitions.json   (7 entries)
+    shopify_api_definitions.json       (9 entries)
+    appsflyer_api_definitions.json     (6 entries)
+    firebase_api_definitions.json      (6 entries)
 
 Single URL ("From Website") → playwright_scraper.py (subprocess)
                             → raw HTML blocks
@@ -343,6 +379,10 @@ Single URL ("From Website") → playwright_scraper.py (subprocess)
                             → APIEntry list
                             → ChromaDB upsert
                             → Neo4j upsert
+
+File upload (.json / .pdf / .md) → POST /api/upload
+                           → parsed to APIEntry list
+                           → ChromaDB upsert + Neo4j upsert (via ingest_internal_api)
 ```
 
 ### Lookup query
@@ -367,6 +407,20 @@ Question → classifier.py → planning_handler.py
                          → QueryResponse (query_type: planning, plan_steps: [...])
 ```
 
+### Advisory query
+
+```
+Question → classifier.py → advisory_handler.py
+                         → vector_store.hybrid_search() (top_k=8, KB entries as grounding context)
+                         → reranker.rerank() (top_k=4)
+                         → Gemini Pro (non-technical expert system prompt + KB context)
+                         → QueryResponse (query_type: advisory, sources: [...], plan_steps: [])
+```
+
+Advisory questions include: why numbers differ between platforms, SQL generation, schema design,
+dashboard architecture, pipeline design, attribution explanations, data quality diagnostics.
+Unlike lookup, Gemini is permitted to draw on its general knowledge — KB context is supplementary grounding.
+
 ---
 
 ## Key Design Decisions
@@ -378,7 +432,15 @@ Question → classifier.py → planning_handler.py
 **Playwright subprocess isolation** — Playwright requires asyncio subprocesses which conflict
 with Windows ProactorEventLoop inside FastAPI. Running it as an isolated subprocess.run()
 process is the only reliable solution on Windows. Used for single-URL scraping only; Meta
-platforms use a curated JSON file instead because Meta blocks headless browsers entirely.
+blocks headless browsers entirely at the network level.
+
+**WhatsApp uses Meta's official OpenAPI spec** — Meta published github.com/facebook/openapi
+in late 2025. The repo currently contains one spec (business-messaging-api_v23.0.yaml) covering
+the WhatsApp Cloud API. WhatsApp is now handled by openapi_parser.parse_meta_whatsapp() with
+a 22-path filter (WHATSAPP_ENDPOINT_FILTER) and gets full Gemini enrichment. If Meta publishes
+further specs (Graph API, Ads API etc.), add them to OPENAPI_SOURCES and write a corresponding
+parse_* method following the same pattern. The curated JSON files for Meta Graph, Instagram,
+Ads, and Pixel should be retired once official specs are available.
 
 **Lookup handler tuning** — max_output_tokens increased from 600 to 1500, and context per
 source increased from 800 to 1500 chars, for more detailed lookup answers.
@@ -393,9 +455,21 @@ Pure vector search misses exact matches. BM25 catches them. RRF combines both.
 generation and data engineering advisory answers. Flash is used everywhere else for speed and cost.
 
 **Advisory handler uses general Gemini knowledge** — Unlike lookup (which only answers from KB context),
-the advisory handler is permitted to use Gemini's general data engineering knowledge alongside KB context.
+the advisory handler is permitted to use Gemini's general knowledge alongside KB context.
 This is intentional — advisory questions like "why do Shopify and GA4 numbers differ" require domain
 expertise that cannot be grounded purely in API documentation entries.
+
+**Advisory handler targets non-technical users** — the system prompt is written for marketers, managers,
+and analysts, not data engineers. It instructs Gemini to use plain everyday language, explain jargon,
+use analogies, and avoid starting responses with conversational openers ("Of course.", "Certainly.", etc.).
+The lookup handler has the same non-technical audience framing — both handlers serve the same user base.
+
+**Upload File tab** — the /api/upload endpoint (which already existed) was surfaced in the frontend
+via a third tab ("Upload File") in the Add API modal. Supports drag-and-drop or click-to-browse.
+Accepts .json (API definition list in the standard curated JSON format), .pdf (documentation docs
+parsed page-by-page), and .md (documentation parsed by headers). The .csv and .txt formats are
+supported by the backend but not surfaced in the UI tab since they are unlikely to be used by
+the target audience.
 
 **One chunk per endpoint** — each APIEntry represents exactly one API endpoint. Never split
 a single endpoint's documentation across multiple chunks. This is critical for accuracy.
@@ -417,10 +491,14 @@ a single endpoint's documentation across multiple chunks. This is critical for a
 
 1. ~~Fix Playwright scraper~~ — DONE (2026-03-12): replaced with JSON file for Meta, improved Playwright for non-Meta URLs
 2. ~~Remove all emojis from static/index.html~~ — DONE (2026-03-12): replaced with SVGs
-3. ~~Add advisory query mode~~ — DONE (2026-03-12): third query type covering data engineering advisory, SQL, diagnostics, schema design
+3. ~~Add advisory query mode~~ — DONE (2026-03-12): third query type covering advisory, SQL, diagnostics, schema design
 4. ~~Add missing data engineering platforms~~ — DONE (2026-03-12): GA4, Meta Ads, Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase
-5. Trigger full ingestion after startup to populate new platforms into ChromaDB + Neo4j
-6. Add internal API wrapper entries once user finalises the details
-7. Evaluate advisory answer quality on the 50 sample questions (see Data engineer's Assistant sample questions.pdf)
-8. Evaluate graph relationship density in Neo4j — add manual edges if sparse
-9. Update this HANDOVER.md after each work session
+5. ~~Trigger full ingestion~~ — DONE (2026-03-12): 177 entries across 12 platforms loaded into ChromaDB + Neo4j
+6. ~~Expose file upload in frontend~~ — DONE (2026-03-12): Upload File tab added to Add API modal (drag-and-drop, .json and .pdf)
+7. ~~Advisory handler tone~~ — DONE (2026-03-12): system prompt rewritten for non-technical users (plain language, analogies, no conversational openers)
+8. ~~Migrate WhatsApp to official Meta OpenAPI spec~~ — DONE (2026-03-13): WhatsApp now parsed from github.com/facebook/openapi (v23.0), Gemini-enriched; expanded Meta Graph (9) + Instagram (4) curated entries
+9. **Trigger re-ingestion** — POST /admin/scrape to load new WhatsApp OpenAPI entries + expanded Meta/Instagram JSON into ChromaDB + Neo4j
+10. Add internal API wrapper entries once user finalises the details
+11. Evaluate advisory answer quality on the 50 sample questions (see Data engineer's Assistant sample questions.pdf)
+12. Evaluate graph relationship density in Neo4j — add manual edges if sparse
+13. Monitor github.com/facebook/openapi for new spec files — retire curated JSON for any platform that publishes an official spec

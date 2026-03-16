@@ -1,1155 +1,390 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API Knowledge Base v2</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg: #03050a;
-    --surface: rgba(13, 17, 28, 0.7);
-    --surface-solid: #0d111c;
-    --surface2: rgba(22, 28, 45, 0.5);
-    --surface3: rgba(30, 39, 61, 0.5);
-    --border: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(255, 255, 255, 0.15);
-    --teal: #00f2fe;
-    --teal-dim: #00d2de;
-    --teal-glow: rgba(0, 242, 254, 0.15);
-    --teal-glow2: rgba(0, 242, 254, 0.08);
-    --amber: #ffd700;
-    --amber-glow: rgba(255, 215, 0, 0.15);
-    --violet: #a78bfa;
-    --violet-glow: rgba(167, 139, 250, 0.15);
-    --red: #ff4d6d;
-    --text: #f0f2f5;
-    --text-2: #94a3b8;
-    --text-3: #64748b;
-    --font: 'Sora', sans-serif;
-    --mono: 'IBM Plex Mono', monospace;
-    --radius: 12px;
-    --radius-lg: 20px;
-    --glass: blur(12px) saturate(180%);
-  }
-  html, body { height: 100%; overflow: hidden; position: relative; }   
-  body { font-family: var(--font); background: var(--bg); color: var(--text); display: flex; flex-direction: column; font-size: 14px; }
-
-  /* ── Smooth Background ── */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: 
-      radial-gradient(circle at 0% 0%, rgba(0, 242, 254, 0.05) 0%, transparent 40%),
-      radial-gradient(circle at 100% 100%, rgba(0, 242, 254, 0.03) 0%, transparent 40%);
-    pointer-events: none;
-    z-index: -1;
-  }
-
-  /* Header */
-  header { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 64px; background: var(--surface); backdrop-filter: var(--glass); border-bottom: 1px solid var(--border); flex-shrink: 0; z-index: 10; }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 32px; height: 32px; background: var(--teal-glow); border: 1px solid var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
-  .logo-text span { color: var(--teal); }
-  .logo-badge { font-family: var(--mono); font-size: 10px; background: var(--teal-glow); border: 1px solid rgba(0,229,176,0.3); color: var(--teal); padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
-  .header-right { display: flex; align-items: center; gap: 10px; }
-  .pill { font-family: var(--mono); font-size: 11px; color: var(--text-2); background: var(--surface3); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; }
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
-  .btn-primary { background: var(--teal); color: #080b12; }
-  .btn-primary:hover { background: var(--teal-dim); transform: translateY(-1px); }
-  .btn-ghost { background: transparent; color: var(--text-2); border: 1px solid var(--border2); }
-  .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
-  .btn-amber { background: var(--amber); color: #080b12; }
-  .btn-amber:hover { opacity: 0.9; transform: translateY(-1px); }
-  .btn-sm { padding: 5px 12px; font-size: 12px; }
-  .btn-danger { background: transparent; color: var(--red); border: none; padding: 4px 8px; font-size: 12px; opacity: 0.6; }
-  .btn-danger:hover { opacity: 1; }
-
-  /* Layout */
-  .layout { display: flex; flex: 1; overflow: hidden; }
-
-  /* Sidebar */
-  .sidebar { width: 300px; flex-shrink: 0; background: var(--surface); backdrop-filter: var(--glass); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-  .sidebar-section { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .sidebar-label { font-size: 10.5px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
-  .platform-filter { display: flex; flex-direction: column; gap: 2px; }
-  .plat-btn { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--text-2); border: none; background: transparent; font-family: var(--font); text-align: left; transition: all 0.12s; width: 100%; }
-  .plat-btn:hover { background: var(--surface3); color: var(--text); }
-  .plat-btn.active { background: var(--teal-glow); color: var(--teal); }
-  .plat-count { font-family: var(--mono); font-size: 10.5px; background: var(--surface3); border-radius: 4px; padding: 1px 6px; color: var(--text-3); }
-  .plat-btn.active .plat-count { background: rgba(0,229,176,0.15); color: var(--teal); }
-  .plat-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; }
-  .api-list { flex: 1; overflow-y: auto; padding: 10px; }
-  .api-list::-webkit-scrollbar { width: 3px; }
-  .api-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-  .api-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 8px 10px; border-radius: 8px; margin-bottom: 2px; gap: 6px; border: 1px solid transparent; transition: all 0.12s; }
-  .api-item:hover { background: var(--surface3); border-color: var(--border); }
-  .api-item-info { flex: 1; min-width: 0; cursor: pointer; }
-  .api-item-name { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .api-item-meta { display: flex; gap: 5px; margin-top: 3px; align-items: center; }
-  .method-badge { font-family: var(--mono); font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
-  .method-GET { background: rgba(0,229,176,0.1); color: var(--teal); }
-  .method-POST { background: rgba(240,165,0,0.1); color: var(--amber); }
-  .method-PUT, .method-PATCH { background: rgba(167,139,250,0.1); color: var(--violet); }
-  .method-DELETE { background: rgba(255,79,106,0.1); color: var(--red); }
-  .api-item-endpoint { font-family: var(--mono); font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  .scrape-section { padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
-  .scrape-btn { width: 100%; justify-content: center; margin-bottom: 6px; }
-  .scrape-status { font-size: 11px; color: var(--text-3); font-family: var(--mono); text-align: center; }
-  .scrape-status.running { color: var(--amber); }
-  .scrape-status.success { color: var(--teal); }
-  .scrape-status.error { color: var(--red); }
-
-  /* Main */
-  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-  /* Mode bar */
-  .mode-bar { display: flex; align-items: center; padding: 12px 28px; border-bottom: 1px solid var(--border); background: var(--surface); backdrop-filter: var(--glass); gap: 8px; flex-shrink: 0; }
-  .mode-label { font-size: 11.5px; color: var(--text-3); margin-right: 4px; font-weight: 500; }
-  .mode-chip { padding: 5px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--text-2); transition: all 0.15s; font-family: var(--font); }
-  .mode-chip.active-lookup { background: var(--teal-glow); border-color: var(--teal); color: var(--teal); }
-  .mode-chip.active-planning { background: var(--amber-glow); border-color: var(--amber); color: var(--amber); }
-  .mode-hint { margin-left: auto; font-size: 11.5px; color: var(--text-3); }
-  .mode-hint span { color: var(--text-2); }
-
-  /* Chat */
-  .chat-area { flex: 1; overflow-y: auto; padding: 28px 36px; display: flex; flex-direction: column; gap: 24px; }
-  .chat-area::-webkit-scrollbar { width: 5px; }
-  .chat-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  .welcome { text-align: center; padding: 50px 20px; max-width: 580px; margin: 0 auto; animation: fadeUp 0.5s ease forwards; }
-  .welcome-icon { font-size: 44px; margin-bottom: 16px; filter: drop-shadow(0 0 20px rgba(0,229,176,0.4)); }
-  .welcome h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.4px; }
-  .welcome p { color: var(--text-2); line-height: 1.65; font-size: 13.5px; }
-  .suggestion-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 24px; }
-  .sug-card { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border2); background: var(--surface); cursor: pointer; text-align: left; transition: all 0.15s; }
-  .sug-card:hover { border-color: var(--teal); background: var(--teal-glow2); }
-  .sug-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
-  .sug-label.lookup { color: var(--teal); }
-  .sug-label.planning { color: var(--amber); }
-  .sug-label.advisory { color: var(--violet); }
-  .sug-text { font-size: 12.5px; color: var(--text-2); line-height: 1.4; }
-
-  .message { display: flex; gap: 12px; animation: fadeUp 0.3s ease forwards; max-width: 860px; }
-  .message.user { flex-direction: row-reverse; align-self: flex-end; }
-  .message.assistant { align-self: flex-start; width: 100%; }
-  .msg-avatar { width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-  .message.user .msg-avatar { background: var(--amber); color: #080b12; font-weight: 700; }
-  .message.assistant .msg-avatar { background: var(--teal-glow); border: 1px solid rgba(0,229,176,0.3); }
-  .message.assistant.planning-msg .msg-avatar { background: var(--amber-glow); border: 1px solid rgba(240,165,0,0.3); }
-  .message.assistant.advisory-msg .msg-avatar { background: var(--violet-glow); border: 1px solid rgba(167,139,250,0.3); }
-  .msg-content { flex: 1; min-width: 0; }
-  .msg-type-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; }
-  .msg-type-badge.lookup { background: var(--teal-glow); color: var(--teal); }
-  .msg-type-badge.planning { background: var(--amber-glow); color: var(--amber); }
-  .msg-type-badge.advisory { background: var(--violet-glow); color: var(--violet); }
-  .msg-bubble { padding: 14px 18px; border-radius: var(--radius-lg); line-height: 1.75; font-size: 14px; }
-  .message.user .msg-bubble { 
-    background: var(--teal); 
-    color: #03050a; 
-    font-weight: 500;
-    border: none;
-    box-shadow: 0 4px 15px var(--teal-glow);
-    border-radius: var(--radius-lg) 4px var(--radius-lg) var(--radius-lg); 
-  }
-  .message.assistant .msg-bubble { 
-    background: var(--surface2); 
-    backdrop-filter: var(--glass);
-    border: 1px solid var(--border); 
-    border-radius: 4px var(--radius-lg) var(--radius-lg) var(--radius-lg); 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Plan steps */
-  .plan-steps { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
-  .step-card { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-lg); overflow: hidden; }
-  .step-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--surface3); border-bottom: 1px solid var(--border); }
-  .step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--amber); color: #080b12; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .step-api-name { font-size: 13.5px; font-weight: 600; }
-  .step-platform { font-size: 11px; color: var(--text-3); margin-left: auto; font-family: var(--mono); }
-  .step-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
-  .step-row { display: flex; gap: 10px; align-items: flex-start; }
-  .step-row-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-3); min-width: 72px; padding-top: 1px; }
-  .step-row-value { font-size: 13px; line-height: 1.5; flex: 1; }
-  .step-endpoint { font-family: var(--mono); font-size: 12px; background: var(--surface3); padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
-  .step-params { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-  .step-param { font-size: 12.5px; font-family: var(--mono); color: var(--text-2); padding: 2px 0; border-left: 2px solid var(--border2); padding-left: 8px; }
-
-  /* Sources */
-  .sources-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .source-tag { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; background: var(--surface3); border: 1px solid var(--border); font-size: 11px; color: var(--text-2); font-family: var(--mono); }
-  .source-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
-  .source-dot.graph { background: var(--amber); }
-  .source-score { font-size: 10px; color: var(--text-3); }
-
-  /* Thinking */
-  .thinking { display: flex; gap: 5px; align-items: center; padding: 14px 18px; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); animation: bounce 1.2s infinite; }
-  .dot:nth-child(2) { animation-delay: 0.2s; }
-  .dot:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
-
-  /* Input */
-  .input-area { padding: 14px 36px 20px; flex-shrink: 0; }
-  .platform-hint { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: var(--text-3); }
-  .platform-hint-tag { background: var(--teal-glow); border: 1px solid rgba(0,229,176,0.3); color: var(--teal); padding: 2px 8px; border-radius: 20px; font-size: 11px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-  .platform-hint-tag:hover { opacity: 0.7; }
-  .input-wrapper { display: flex; align-items: flex-end; gap: 10px; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 10px 10px 10px 18px; transition: border-color 0.15s; }
-  .input-wrapper:focus-within { border-color: var(--teal); }
-  .input-wrapper.planning-mode { border-color: rgba(240,165,0,0.4); }
-  .input-wrapper.planning-mode:focus-within { border-color: var(--amber); }
-  .chat-input { flex: 1; background: transparent; border: none; outline: none; font-family: var(--font); font-size: 14px; color: var(--text); resize: none; min-height: 24px; max-height: 120px; line-height: 1.6; padding: 2px 0; }
-  .chat-input::placeholder { color: var(--text-3); }
-  .send-btn { width: 38px; height: 38px; border-radius: 9px; background: var(--teal); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #080b12; font-size: 17px; transition: all 0.15s; flex-shrink: 0; }
-  .send-btn:hover { background: var(--teal-dim); transform: translateY(-1px); }
-  .send-btn.planning { background: var(--amber); }
-  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-  .input-hint { text-align: center; font-size: 11px; color: var(--text-3); margin-top: 6px; }
-
-  /* Modal */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(8,11,18,0.85); backdrop-filter: blur(6px); z-index: 100; display: none; align-items: center; justify-content: center; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); width: 540px; max-width: 95vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 80px rgba(0,0,0,0.6); animation: slideUp 0.25s ease forwards; }
-  .modal-header { padding: 18px 22px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .modal-title { font-size: 15px; font-weight: 600; }
-  .modal-close { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: none; background: var(--surface3); color: var(--text-2); cursor: pointer; font-size: 15px; }
-  .modal-close:hover { background: var(--border2); color: var(--text); }
-  .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
-  .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
-  .form-group { margin-bottom: 14px; }
-  label { display: block; font-size: 11.5px; font-weight: 600; color: var(--text-2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.3px; }
-  .req { color: var(--teal); margin-left: 2px; }
-  input[type="text"], textarea, select { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 12px; font-family: var(--font); font-size: 13.5px; color: var(--text); outline: none; transition: border-color 0.15s; }
-  input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--teal); }
-  input::placeholder, textarea::placeholder { color: var(--text-3); }
-  textarea { resize: vertical; min-height: 75px; line-height: 1.6; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .checkbox-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
-  .checkbox-row input { width: auto; }
-  .checkbox-row label { margin-bottom: 0; text-transform: none; font-size: 13px; }
-
-  /* Toast */
-  .toast { position: fixed; bottom: 24px; right: 24px; padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); opacity: 0; }
-  .toast.show { animation: toastIn 0.3s ease forwards; }
-  .toast.success { background: var(--surface2); border: 1px solid rgba(0,229,176,0.3); color: var(--teal); }
-  .toast.error { background: var(--surface2); border: 1px solid rgba(255,79,106,0.3); color: var(--red); }
-  .toast.warning { background: var(--surface2); border: 1px solid rgba(240,165,0,0.3); color: var(--amber); }
-
-  .empty-state { text-align: center; padding: 36px 16px; color: var(--text-3); font-size: 12.5px; line-height: 1.6; }
-  .empty-state .big { font-size: 28px; margin-bottom: 10px; }
-
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes toastIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
-
-  /* Modal tabs */
-  .modal-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
-  .modal-tab { flex: 1; padding: 12px 16px; font-family: var(--font); font-size: 13px; font-weight: 500; color: var(--text-3); background: transparent; border: none; cursor: pointer; transition: all 0.15s; border-bottom: 2px solid transparent; }
-  .modal-tab:hover { color: var(--text-2); background: var(--surface2); }
-  .modal-tab.active { color: var(--teal); border-bottom-color: var(--teal); background: var(--teal-glow2); }
-  .modal-tab-icon { margin-right: 6px; vertical-align: middle; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-  .simple-form-hero { text-align: center; padding: 20px 10px 16px; }
-  .simple-form-hero h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
-  .simple-form-hero p { font-size: 13px; color: var(--text-2); line-height: 1.5; }
-  .url-input-group { position: relative; margin-bottom: 16px; }
-  .url-input-group input { padding-left: 38px; font-size: 14px; height: 44px; }
-  .url-input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
-  .scrape-progress { text-align: center; padding: 16px 0 8px; font-size: 13px; color: var(--text-2); display: none; }
-  .scrape-progress.visible { display: block; }
-  .scrape-progress .progress-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
-  /* Upload tab */
-  .drop-zone { border: 2px dashed var(--border2); border-radius: 10px; padding: 36px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
-  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--teal); background: var(--teal-glow2); }
-  .drop-zone-icon { color: var(--text-3); margin-bottom: 10px; }
-  .drop-zone-label { font-size: 14px; font-weight: 500; color: var(--text-2); margin-bottom: 4px; }
-  .drop-zone-sub { font-size: 12px; color: var(--text-3); }
-  .drop-zone-sub span { color: var(--teal); }
-  .upload-file-info { display: none; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; margin-top: 12px; font-size: 13px; }
-  .upload-file-info.visible { display: flex; }
-  .upload-file-name { flex: 1; color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .upload-file-size { color: var(--text-3); flex-shrink: 0; }
-  .upload-file-clear { background: none; border: none; cursor: pointer; color: var(--text-3); padding: 2px; display: flex; }
-  .upload-file-clear:hover { color: var(--red); }
-  .upload-result { font-size: 12px; color: var(--text-3); margin-top: 10px; font-family: var(--mono); display: none; }
-  .upload-result.visible { display: block; }
-  #fileInput { display: none; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .optional-fields { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 6px; }
-  .optional-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); cursor: pointer; margin-bottom: 10px; background: none; border: none; font-family: var(--font); }
-  .optional-toggle:hover { color: var(--text-2); }
-  .optional-toggle svg { transition: transform 0.2s; }
-  .optional-toggle.expanded svg { transform: rotate(90deg); }
-  .optional-content { display: none; }
-  .optional-content.visible { display: block; }
-
-  /* Platform colours */
-  .dot-WhatsApp, .dot-whatsapp { background: #25d366; }
-  .dot-Meta, .dot-meta, .dot-Facebook { background: #1877f2; }
-  .dot-Instagram, .dot-instagram { background: #e1306c; }
-  .dot-Stripe, .dot-stripe { background: #635bff; }
-  .dot-Twilio, .dot-twilio { background: #f22f46; }
-  .dot-SendGrid, .dot-sendgrid { background: #1a82e2; }
-  .dot-Google { background: #4285f4; }
-  .dot-default { background: var(--text-3); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Knowledge Base v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-icon">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+      </div>
+      <div class="logo-text">API <span>Knowledge Base</span> <span class="logo-badge">v2</span></div>
     </div>
-    <div class="logo-text">API <span>Knowledge Base</span> <span class="logo-badge">v2</span></div>
-  </div>
-  <div class="header-right">
-    <div class="pill" id="apiCount">0 APIs</div>
-    <button class="btn btn-ghost btn-sm" onclick="openModal()">+ Add API</button>
-    <button class="btn btn-ghost btn-sm" onclick="checkHealth()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-      Health
-    </button>
-  </div>
-</header>
+    <div class="header-right">
+      <div class="pill" id="apiCount">0 APIs</div>
+      <button class="btn btn-ghost btn-sm" onclick="toggleTheme()" title="Toggle Theme">
+        <svg id="themeIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="openModal()">+ Add API</button>
+      <button class="btn btn-ghost btn-sm" onclick="checkHealth()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        Health
+      </button>
+    </div>
+  </header>
 
-<div class="layout">
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Platforms</div>
-      <div class="platform-filter" id="platformFilter">
-        <button class="plat-btn active" onclick="filterPlatform(null, this)">
-          <span style="display:flex;align-items:center;gap:6px"><span class="plat-dot dot-default"></span>All Platforms</span>
-          <span class="plat-count" id="totalCount">0</span>
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Platforms</div>
+        <div class="platform-filter" id="platformFilter">
+          <button class="plat-btn active" onclick="filterPlatform(null, this)">
+            <span style="display:flex;align-items:center;gap:6px">
+              <span class="plat-dot dot-default"></span>All Platforms
+            </span>
+            <span class="plat-count" id="totalCount">0</span>
+          </button>
+        </div>
+      </div>
+      <div class="api-list" id="apiList">
+        <div class="empty-state">
+          <div class="big">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          No APIs yet.<br>Run the scraper or add manually.
+        </div>
+      </div>
+      <div class="scrape-section">
+        <button class="btn btn-amber btn-sm scrape-btn" onclick="triggerScrape()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          Run Scraper
         </button>
+        <div class="scrape-status" id="scrapeStatus">Last run: never</div>
       </div>
-    </div>
-    <div class="api-list" id="apiList">
-      <div class="empty-state">
-        <div class="big">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-        </div>
-        No APIs yet.<br>Run the scraper or add manually.
-      </div>
-    </div>
-    <div class="scrape-section">
-      <button class="btn btn-amber btn-sm scrape-btn" onclick="triggerScrape()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-        Run Scraper
-      </button>
-      <div class="scrape-status" id="scrapeStatus">Last run: never</div>
-    </div>
-  </aside>
+    </aside>
 
-  <!-- Main -->
-  <main class="main">
-    <!-- Mode bar -->
-    <div class="mode-bar">
-      <span class="mode-label">Mode:</span>
-      <button class="mode-chip active-lookup" id="modeAuto" onclick="setMode('auto', this)">Auto-detect</button>
-      <button class="mode-chip" id="modeLookup" onclick="setMode('lookup', this)">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; vertical-align:middle;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        Lookup
-      </button>
-      <button class="mode-chip" id="modePlan" onclick="setMode('planning', this)">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; vertical-align:middle;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
-        Plan
-      </button>
-      <span class="mode-hint">Current: <span id="currentModeLabel">Auto-detect</span></span>
-    </div>
+    <!-- Main -->
+    <main class="main">
 
-    <div class="chat-area" id="chatArea">
-      <div class="welcome" id="welcome">
-        <div class="welcome-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect><line x1="22" y1="12" x2="22" y2="12"></line><line x1="2" y1="12" x2="2" y2="12"></line><line x1="7" y1="12" x2="17" y2="12"></line></svg>
-        </div>
-        <h2>What do you need to know about your APIs?</h2>
-        <p>Ask what an API does, or ask for a step-by-step plan to achieve a specific goal.</p>
-        <div class="suggestion-grid">
-          <div class="sug-card" onclick="sendSuggestion(this)">
-            <div class="sug-label lookup">Lookup</div>
-            <div class="sug-text">What does the WhatsApp Template Message API do?</div>
-          </div>
-          <div class="sug-card" onclick="sendSuggestion(this)">
-            <div class="sug-label planning">Planning</div>
-            <div class="sug-text">How do I send an order confirmation via WhatsApp?</div>
-          </div>
-          <div class="sug-card" onclick="sendSuggestion(this)">
-            <div class="sug-label planning">Planning</div>
-            <div class="sug-text">What API calls do I need to charge a customer?</div>
-          </div>
-          <div class="sug-card" onclick="sendSuggestion(this)">
-            <div class="sug-label lookup">Lookup</div>
-            <div class="sug-text">What is the difference between Twilio SMS and Verify?</div>
-          </div>
-          <div class="sug-card" onclick="sendSuggestion(this)">
-            <div class="sug-label advisory">Advisory</div>
-            <div class="sug-text">Why do Shopify purchase numbers differ from GA4?</div>
-          </div>
-          <div class="sug-card" onclick="sendSuggestion(this)">
-            <div class="sug-label advisory">Advisory</div>
-            <div class="sug-text">What SQL query calculates daily revenue from Shopify orders?</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="input-area">
-      <div id="platformHint" style="display:none" class="platform-hint">
-        Filtering: <span class="platform-hint-tag" onclick="filterPlatform(null, document.querySelector('.plat-btn'))">
-          <span id="filterPlatformName"></span> <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </span>
-      </div>
-      <div class="input-wrapper" id="inputWrapper">
-        <textarea class="chat-input" id="chatInput"
-          placeholder="Ask about an API, or describe what you want to achieve…"
-          rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+      <!-- Mode bar -->
+      <div class="mode-bar">
+        <span class="mode-label">Mode:</span>
+        <button class="mode-chip active-lookup" id="modeAuto" onclick="setMode('auto', this)">Auto-detect</button>
+        <button class="mode-chip" id="modeLookup" onclick="setMode('lookup', this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          Lookup
         </button>
+        <button class="mode-chip" id="modePlan" onclick="setMode('planning', this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+          Plan
+        </button>
+        <button class="mode-chip" id="modeAdvisory" onclick="setMode('advisory', this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          Advisory
+        </button>
+        <button class="mode-chip" id="modeComparison" onclick="setMode('comparison', this)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;vertical-align:middle;">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <polyline points="8 7 3 12 8 17"></polyline><polyline points="16 7 21 12 16 17"></polyline>
+          </svg>
+          Compare
+        </button>
+        <span class="mode-hint">Current: <span id="currentModeLabel">Auto-detect</span></span>
       </div>
-      <div class="input-hint">Enter to send · Shift+Enter for new line</div>
-    </div>
-  </main>
-</div>
 
-<!-- Add API Modal -->
-<div class="modal-overlay" id="modal">
-  <div class="modal" style="width:580px">
-    <div class="modal-header">
-      <div class="modal-title">Add API</div>
-      <button class="modal-close" onclick="closeModal()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-    </div>
-
-    <!-- Tabs -->
-    <div class="modal-tabs">
-      <button class="modal-tab active" id="tabSimple" onclick="switchModalTab('simple')">
-        <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-        From Website
-      </button>
-      <button class="modal-tab" id="tabAdvanced" onclick="switchModalTab('advanced')">
-        <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-        Advanced
-      </button>
-      <button class="modal-tab" id="tabUpload" onclick="switchModalTab('upload')">
-        <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-        Upload File
-      </button>
-    </div>
-
-    <!-- Simple Tab -->
-    <div class="tab-panel active" id="panelSimple">
-      <div class="modal-body">
-        <div class="simple-form-hero">
-          <h3>Scrape API docs from any website</h3>
-          <p>Paste a documentation URL below and we will automatically extract the API details for you.</p>
+      <!-- Chat area -->
+      <div class="chat-area" id="chatArea">
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="10" rx="2" ry="2"></rect>
+              <line x1="22" y1="12" x2="22" y2="12"></line>
+              <line x1="2" y1="12" x2="2" y2="12"></line>
+              <line x1="7" y1="12" x2="17" y2="12"></line>
+            </svg>
+          </div>
+          <h2>What do you need to know about your APIs?</h2>
+          <p>Ask what an API does, plan a workflow, compare operations, or get data engineering advice.</p>
+          <div class="suggestion-grid">
+            <div class="sug-card" onclick="sendSuggestion(this)">
+              <div class="sug-label lookup">Lookup</div>
+              <div class="sug-text">What does the WhatsApp Template Message API do?</div>
+            </div>
+            <div class="sug-card" onclick="sendSuggestion(this)">
+              <div class="sug-label planning">Planning</div>
+              <div class="sug-text">How do I send an order confirmation via WhatsApp?</div>
+            </div>
+            <div class="sug-card" onclick="sendSuggestion(this)">
+              <div class="sug-label comparison">Comparison</div>
+              <div class="sug-text">What is the difference between capturing and confirming a PaymentIntent?</div>
+            </div>
+            <div class="sug-card" onclick="sendSuggestion(this)">
+              <div class="sug-label planning">Planning</div>
+              <div class="sug-text">What API calls do I need to charge a customer?</div>
+            </div>
+            <div class="sug-card" onclick="sendSuggestion(this)">
+              <div class="sug-label advisory">Advisory</div>
+              <div class="sug-text">Why do Shopify purchase numbers differ from GA4?</div>
+            </div>
+            <div class="sug-card" onclick="sendSuggestion(this)">
+              <div class="sug-label advisory">Advisory</div>
+              <div class="sug-text">What SQL query calculates daily revenue from Shopify orders?</div>
+            </div>
+          </div>
         </div>
-        <div class="url-input-group">
-          <span class="url-input-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+      </div>
+
+      <!-- Input -->
+      <div class="input-area">
+        <div id="platformHint" style="display:none" class="platform-hint">
+          Filtering: <span class="platform-hint-tag" onclick="filterPlatform(null, document.querySelector('.plat-btn'))">
+            <span id="filterPlatformName"></span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;">
+              <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </span>
-          <input type="text" id="fUrl" placeholder="https://developer.example.com/docs/api/send-message">
         </div>
-
-        <div class="optional-fields">
-          <button class="optional-toggle" id="optionalToggle" onclick="toggleOptionalFields()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            Optional: specify platform and category
+        <div class="input-wrapper" id="inputWrapper">
+          <textarea class="chat-input" id="chatInput"
+            placeholder="Ask about an API, or describe what you want to achieve…"
+            rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
           </button>
-          <div class="optional-content" id="optionalContent">
-            <div class="form-row">
-              <div class="form-group">
-                <label>Platform</label>
-                <input type="text" id="fUrlPlatform" placeholder="e.g. WhatsApp, Stripe">
-              </div>
-              <div class="form-group">
-                <label>Category</label>
-                <input type="text" id="fUrlCategory" placeholder="e.g. Messaging, Payments">
+        </div>
+        <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Add API Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal" style="width:580px">
+      <div class="modal-header">
+        <div class="modal-title">Add API</div>
+        <button class="modal-close" onclick="closeModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tabSimple" onclick="switchModalTab('simple')">
+          <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          From Website
+        </button>
+        <button class="modal-tab" id="tabAdvanced" onclick="switchModalTab('advanced')">
+          <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          Advanced
+        </button>
+        <button class="modal-tab" id="tabUpload" onclick="switchModalTab('upload')">
+          <svg class="modal-tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          Upload File
+        </button>
+      </div>
+
+      <!-- Simple tab: scrape from URL -->
+      <div class="tab-panel active" id="panelSimple">
+        <div class="modal-body">
+          <div class="simple-form-hero">
+            <h3>Scrape API docs from any website</h3>
+            <p>Paste a documentation URL below and we will automatically extract the API details for you.</p>
+          </div>
+          <div class="url-input-group">
+            <span class="url-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            </span>
+            <input type="text" id="fUrl" placeholder="https://developer.example.com/docs/api/send-message">
+          </div>
+          <div class="optional-fields">
+            <button class="optional-toggle" id="optionalToggle" onclick="toggleOptionalFields()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              Optional: specify platform and category
+            </button>
+            <div class="optional-content" id="optionalContent">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Platform</label>
+                  <input type="text" id="fUrlPlatform" placeholder="e.g. WhatsApp, Stripe">
+                </div>
+                <div class="form-group">
+                  <label>Category</label>
+                  <input type="text" id="fUrlCategory" placeholder="e.g. Messaging, Payments">
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <div class="scrape-progress" id="scrapeProgress">
-          <span class="progress-spinner"></span>
-          <span id="scrapeProgressText">Scraping page and extracting APIs...</span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" id="scrapeUrlBtn" onclick="scrapeUrl()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-          Scrape and Import
-        </button>
-      </div>
-    </div>
-
-    <!-- Advanced Tab -->
-    <div class="tab-panel" id="panelAdvanced">
-      <div class="modal-body">
-        <div class="form-row">
-          <div class="form-group">
-            <label>API Name <span class="req">*</span></label>
-            <input type="text" id="fName" placeholder="e.g. WhatsApp Send Message">
-          </div>
-          <div class="form-group">
-            <label>Platform <span class="req">*</span></label>
-            <input type="text" id="fPlatform" placeholder="e.g. WhatsApp, Stripe">
+          <div class="scrape-progress" id="scrapeProgress">
+            <span class="progress-spinner"></span>
+            <span id="scrapeProgressText">Scraping page and extracting APIs...</span>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Category</label>
-            <input type="text" id="fCategory" placeholder="e.g. Messaging, Payments">
-          </div>
-          <div class="form-group">
-            <label>HTTP Method</label>
-            <select id="fMethod"><option>GET</option><option selected>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Endpoint</label>
-          <input type="text" id="fEndpoint" placeholder="e.g. /v1/{phone-number-id}/messages">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Base URL</label>
-            <input type="text" id="fBaseUrl" placeholder="https://graph.facebook.com">
-          </div>
-          <div class="form-group">
-            <label>Auth</label>
-            <input type="text" id="fAuth" placeholder="Bearer token">
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Technical Description</label>
-          <textarea id="fDesc" placeholder="Technical details  parameters, response format, auth requirements..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>Plain English Explanation <span class="req">*</span></label>
-          <textarea id="fPlain" placeholder="What this API does in simple terms for a non-technical person..." style="min-height:90px"></textarea>
-        </div>
-        <div class="checkbox-row">
-          <input type="checkbox" id="fInternal">
-          <label for="fInternal">This is an internal/custom API wrapper</label>
-        </div>
-        <div class="form-group" id="internalNotesGroup" style="display:none">
-          <label>Internal Notes</label>
-          <textarea id="fInternalNotes" placeholder="Internal details, custom behaviour, environment notes..."></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveAPI()">Save API</button>
-      </div>
-    </div>
-
-    <!-- Upload File Tab -->
-    <div class="tab-panel" id="panelUpload">
-      <div class="modal-body">
-        <input type="file" id="fileInput" accept=".json,.pdf" onchange="onFileSelected(this.files[0])">
-        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()"
-             ondragover="event.preventDefault(); this.classList.add('drag-over')"
-             ondragleave="this.classList.remove('drag-over')"
-             ondrop="event.preventDefault(); this.classList.remove('drag-over'); onFileSelected(event.dataTransfer.files[0])">
-          <div class="drop-zone-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          </div>
-          <div class="drop-zone-label">Drop a file here or click to browse</div>
-          <div class="drop-zone-sub">Supports <span>.json</span> (API definition list) and <span>.pdf</span> (API documentation)</div>
-        </div>
-        <div class="upload-file-info" id="uploadFileInfo">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--teal)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-          <span class="upload-file-name" id="uploadFileName"></span>
-          <span class="upload-file-size" id="uploadFileSize"></span>
-          <button class="upload-file-clear" onclick="clearUploadFile()" title="Remove">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="scrapeUrlBtn" onclick="scrapeUrl()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px">
+              <circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            Scrape and Import
           </button>
         </div>
-        <div class="upload-result" id="uploadResult"></div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()" disabled>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          Upload
-        </button>
+
+      <!-- Advanced tab: manual entry -->
+      <div class="tab-panel" id="panelAdvanced">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>API Name <span class="req">*</span></label>
+              <input type="text" id="fName" placeholder="e.g. WhatsApp Send Message">
+            </div>
+            <div class="form-group">
+              <label>Platform <span class="req">*</span></label>
+              <input type="text" id="fPlatform" placeholder="e.g. WhatsApp, Stripe">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <input type="text" id="fCategory" placeholder="e.g. Messaging, Payments">
+            </div>
+            <div class="form-group">
+              <label>HTTP Method</label>
+              <select id="fMethod">
+                <option>GET</option>
+                <option selected>POST</option>
+                <option>PUT</option>
+                <option>PATCH</option>
+                <option>DELETE</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Endpoint</label>
+            <input type="text" id="fEndpoint" placeholder="e.g. /v1/{phone-number-id}/messages">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Base URL</label>
+              <input type="text" id="fBaseUrl" placeholder="https://graph.facebook.com">
+            </div>
+            <div class="form-group">
+              <label>Auth</label>
+              <input type="text" id="fAuth" placeholder="Bearer token">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Technical Description</label>
+            <textarea id="fDesc" placeholder="Technical details — parameters, response format, auth requirements..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Plain English Explanation <span class="req">*</span></label>
+            <textarea id="fPlain" placeholder="What this API does in simple terms for a non-technical person..." style="min-height:90px"></textarea>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="fInternal">
+            <label for="fInternal">This is an internal/custom API wrapper</label>
+          </div>
+          <div class="form-group" id="internalNotesGroup" style="display:none">
+            <label>Internal Notes</label>
+            <textarea id="fInternalNotes" placeholder="Internal details, custom behaviour, environment notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveAPI()">Save API</button>
+        </div>
       </div>
+
+      <!-- Upload tab -->
+      <div class="tab-panel" id="panelUpload">
+        <div class="modal-body">
+          <input type="file" id="fileInput" accept=".json,.pdf,.md" onchange="onFileSelected(this.files[0])">
+          <div class="drop-zone" id="dropZone"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="event.preventDefault(); this.classList.remove('drag-over'); onFileSelected(event.dataTransfer.files[0])">
+            <div class="drop-zone-icon">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div class="drop-zone-label">Drop a file here or click to browse</div>
+            <div class="drop-zone-sub">Supports <span>.json</span>, <span>.pdf</span> and <span>.md</span> files</div>
+          </div>
+          <div class="upload-file-info" id="uploadFileInfo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--teal)">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span class="upload-file-name" id="uploadFileName"></span>
+            <span class="upload-file-size" id="uploadFileSize"></span>
+            <button class="upload-file-clear" onclick="clearUploadFile()" title="Remove">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <div class="upload-result" id="uploadResult"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="uploadBtn" onclick="uploadFile()" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Upload
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <div class="toast" id="toast"></div>
 
-<script>
-  let selectedPlatform = null;
-  let allAPIs = [];
-  let isLoading = false;
-  let currentMode = 'auto'; // auto | lookup | planning
-
-  const PLATFORM_COLORS = {
-    WhatsApp: '#25d366', Meta: '#1877f2', Facebook: '#1877f2',
-    Instagram: '#e1306c', Stripe: '#635bff', Twilio: '#f22f46',
-    SendGrid: '#1a82e2', Google: '#4285f4',
-  };
-
-  function getPlatformColor(p) {
-    return PLATFORM_COLORS[p] || '#555d78';
-  }
-
-  async function init() {
-    await loadAPIs();
-    await loadPlatforms();
-    await pollScrapeStatus();
-    setInterval(pollScrapeStatus, 15000);
-  }
-
-  async function loadAPIs() {
-    try {
-      const res = await fetch('/api/apis' + (selectedPlatform ? `?platform=${encodeURIComponent(selectedPlatform)}` : ''));
-      allAPIs = await res.json();
-      renderAPIList();
-      document.getElementById('apiCount').textContent = `${allAPIs.length} API${allAPIs.length !== 1 ? 's' : ''}`;
-    } catch(e) { console.error(e); }
-  }
-
-  async function loadPlatforms() {
-    try {
-      const res = await fetch('/api/platforms');
-      const platforms = await res.json();
-      const filter = document.getElementById('platformFilter');
-      const allBtn = filter.querySelector('.plat-btn');
-      filter.innerHTML = '';
-      filter.appendChild(allBtn);
-      document.getElementById('totalCount').textContent = allAPIs.length;
-
-      platforms.forEach(p => {
-        const count = allAPIs.filter(a => a.platform === p).length;
-        const btn = document.createElement('button');
-        btn.className = 'plat-btn';
-        const color = getPlatformColor(p);
-        btn.innerHTML = `<span style="display:flex;align-items:center;gap:6px"><span class="plat-dot" style="background:${color}"></span>${escHtml(p)}</span><span class="plat-count">${count}</span>`;
-        btn.onclick = () => filterPlatform(p, btn);
-        filter.appendChild(btn);
-      });
-    } catch(e) {}
-  }
-
-  function renderAPIList() {
-    const list = document.getElementById('apiList');
-    if (!allAPIs.length) {
-      list.innerHTML = `<div class="empty-state"><div class="big"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>${selectedPlatform ? `No APIs for "${selectedPlatform}"` : 'No APIs stored yet.'}</div>`;
-      return;
-    }
-    list.innerHTML = allAPIs.map(api => `
-      <div class="api-item">
-        <div class="api-item-info" onclick="askAbout('${escHtml(api.name)}')">
-          <div class="api-item-name">${escHtml(api.name)}</div>
-          <div class="api-item-meta">
-            <span class="method-badge method-${api.method || 'GET'}">${api.method || 'GET'}</span>
-            <span class="api-item-endpoint">${escHtml(api.endpoint || '')}</span>
-          </div>
-        </div>
-        <button class="btn btn-danger" onclick="deleteAPI('${api.id}', event)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-    `).join('');
-  }
-
-  function filterPlatform(platform, btn) {
-    selectedPlatform = platform;
-    document.querySelectorAll('.plat-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const hint = document.getElementById('platformHint');
-    if (platform) {
-      document.getElementById('filterPlatformName').textContent = platform;
-      hint.style.display = 'flex';
-    } else {
-      hint.style.display = 'none';
-    }
-    loadAPIs();
-  }
-
-  // Mode
-  function setMode(mode, btn) {
-    currentMode = mode;
-    document.querySelectorAll('.mode-chip').forEach(b => b.className = 'mode-chip');
-    if (mode === 'auto') { btn.classList.add('active-lookup'); document.getElementById('currentModeLabel').textContent = 'Auto-detect'; }
-    else if (mode === 'lookup') { 
-      btn.classList.add('active-lookup'); 
-      document.getElementById('currentModeLabel').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; vertical-align:middle;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Lookup`; 
-    }
-    else { 
-      btn.classList.add('active-planning'); 
-      document.getElementById('currentModeLabel').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px; vertical-align:middle;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Plan`; 
-    }
-    const wrapper = document.getElementById('inputWrapper');
-    wrapper.classList.toggle('planning-mode', mode === 'planning');
-    document.getElementById('sendBtn').classList.toggle('planning', mode === 'planning');
-    const ph = { auto: 'Ask about an API, or describe what you want to achieve…', lookup: 'Ask what an API does…', planning: 'Describe what you want to achieve…' };
-    document.getElementById('chatInput').placeholder = ph[mode];
-  }
-
-  // Chat
-  async function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const question = input.value.trim();
-    if (!question || isLoading) return;
-
-    document.getElementById('welcome')?.remove();
-    isLoading = true;
-    input.value = '';
-    autoResize(input);
-    document.getElementById('sendBtn').disabled = true;
-
-    appendMessage('user', question);
-    const thinking = appendThinking();
-
-    try {
-      const body = { question };
-      if (selectedPlatform) body.platform_filter = selectedPlatform;
-
-      const res = await fetch('/api/query', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      thinking.remove();
-      appendAssistantMessage(data);
-    } catch(e) {
-      thinking.remove();
-      appendMessage('assistant', 'Connection error. Is the server running?');
-    } finally {
-      isLoading = false;
-      document.getElementById('sendBtn').disabled = false;
-    }
-  }
-
-  function appendMessage(role, text) {
-    const chatArea = document.getElementById('chatArea');
-    const el = document.createElement('div');
-    el.className = `message ${role}`;
-    const avatar = role === 'user' ? `<div class="msg-avatar">U</div>` : `<div class="msg-avatar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div>`;
-    el.innerHTML = `${avatar}<div class="msg-content"><div class="msg-bubble">${escHtml(text).replace(/\n/g,'<br>')}</div></div>`;
-    chatArea.appendChild(el);
-    chatArea.scrollTop = chatArea.scrollHeight;
-    return el;
-  }
-
-  function appendAssistantMessage(data) {
-    const chatArea = document.getElementById('chatArea');
-    const el = document.createElement('div');
-    const isPlan = data.query_type === 'planning';
-    const isAdvisory = data.query_type === 'advisory';
-    el.className = `message assistant ${isPlan ? 'planning-msg' : ''} ${isAdvisory ? 'advisory-msg' : ''}`;
-
-    const BADGE_ICONS = {
-      planning: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>Step-by-step plan`,
-      advisory: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>Advisory`,
-      lookup: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Lookup answer`,
-    };
-    const badgeHtml = `<div class="msg-type-badge ${data.query_type}">${BADGE_ICONS[data.query_type] || BADGE_ICONS.lookup}</div>`;
-
-    // Plan steps as cards (if present)
-    let stepsHtml = '';
-    if (isPlan && data.plan_steps && data.plan_steps.length > 0) {
-      stepsHtml = `<div class="plan-steps">` +
-        data.plan_steps.map(step => `
-          <div class="step-card">
-            <div class="step-header">
-              <div class="step-num">${step.step}</div>
-              <div class="step-api-name">${escHtml(step.api_name)}</div>
-              <div class="step-platform">${escHtml(step.platform || '')}</div>
-            </div>
-            <div class="step-body">
-              ${step.endpoint ? `<div class="step-row"><span class="step-row-label">Endpoint</span><span class="step-endpoint">${escHtml(step.endpoint)}</span></div>` : ''}
-              ${step.purpose ? `<div class="step-row"><span class="step-row-label">Purpose</span><span class="step-row-value">${escHtml(step.purpose)}</span></div>` : ''}
-              ${step.parameters && step.parameters.length ? `
-                <div class="step-row">
-                  <span class="step-row-label">Params</span>
-                  <div class="step-params">${step.parameters.map(p => `<div class="step-param">${escHtml(p)}</div>`).join('')}</div>
-                </div>` : ''}
-              ${step.returns ? `<div class="step-row"><span class="step-row-label">Returns</span><span class="step-row-value">${escHtml(step.returns)}</span></div>` : ''}
-            </div>
-          </div>
-        `).join('') + `</div>`;
-    } else if (isPlan) {
-      // Raw plan text if no parsed steps
-      stepsHtml = `<div class="msg-bubble" style="margin-top:10px;white-space:pre-wrap">${escHtml(data.answer)}</div>`;
-    }
-
-    const answerHtml = isPlan && data.plan_steps && data.plan_steps.length
-      ? '' // Don't show raw text if we have structured steps
-      : `<div class="msg-bubble">${escHtml(data.answer).replace(/\n/g,'<br>')}</div>`;
-
-    // Sources
-    const sourcesHtml = data.sources && data.sources.length ? `
-      <div class="sources-bar">
-        <span style="font-size:10.5px;color:var(--text-3);font-family:var(--mono)">Sources:</span>
-        ${data.sources.slice(0,5).map(s => `
-          <div class="source-tag">
-            <div class="source-dot ${s.source === 'graph' ? 'graph' : ''}"></div>
-            ${escHtml(s.name || '')}
-            ${s.relevance != null ? `<span class="source-score">${Math.round(s.relevance * 100)}%</span>` : ''}
-          </div>`).join('')}
-      </div>` : '';
-
-    el.innerHTML = `
-      <div class="msg-avatar">
-        ${isPlan
-          ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>`
-          : isAdvisory
-            ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
-            : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`}
-      </div>
-      <div class="msg-content">
-        ${badgeHtml}
-        ${answerHtml}
-        ${stepsHtml}
-        ${sourcesHtml}
-      </div>`;
-
-    chatArea.appendChild(el);
-    chatArea.scrollTop = chatArea.scrollHeight;
-  }
-
-  function appendThinking() {
-    const chatArea = document.getElementById('chatArea');
-    const el = document.createElement('div');
-    el.className = 'message assistant';
-    el.innerHTML = `<div class="msg-avatar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></div><div class="msg-content"><div class="msg-bubble"><div class="thinking"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
-    chatArea.appendChild(el);
-    chatArea.scrollTop = chatArea.scrollHeight;
-    return el;
-  }
-
-  function sendSuggestion(card) {
-    document.getElementById('chatInput').value = card.querySelector('.sug-text').textContent;
-    const isPlanning = card.querySelector('.sug-label').classList.contains('planning');
-    if (currentMode === 'auto') {
-      // Hint the mode visually — auto-detect will handle actual routing
-    }
-    sendMessage();
-  }
-
-  function askAbout(name) {
-    document.getElementById('chatInput').value = `What does the ${name} API do?`;
-    sendMessage();
-  }
-
-  function handleKey(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  }
-
-  function autoResize(el) {
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  }
-
-  // Scraper
-  async function triggerScrape() {
-    try {
-      const res = await fetch('/admin/scrape', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ platforms: null }),
-      });
-      const data = await res.json();
-      showToast(data.message || 'Scrape started!', 'success');
-      pollScrapeStatus();
-    } catch(e) {
-      showToast('Failed to trigger scrape.', 'error');
-    }
-  }
-
-  async function pollScrapeStatus() {
-    try {
-      const res = await fetch('/admin/scrape/status');
-      const data = await res.json();
-      const el = document.getElementById('scrapeStatus');
-      if (data.is_running) {
-        el.textContent = '';
-        const refreshIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        refreshIcon.setAttribute('width', '12');
-        refreshIcon.setAttribute('height', '12');
-        refreshIcon.setAttribute('viewBox', '0 0 24 24');
-        refreshIcon.setAttribute('fill', 'none');
-        refreshIcon.setAttribute('stroke', 'currentColor');
-        refreshIcon.setAttribute('stroke-width', '2.5');
-        refreshIcon.setAttribute('stroke-linecap', 'round');
-        refreshIcon.setAttribute('stroke-linejoin', 'round');
-        refreshIcon.style.verticalAlign = 'middle';
-        refreshIcon.style.marginRight = '4px';
-        refreshIcon.innerHTML = '<polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>';
-        el.appendChild(refreshIcon);
-        el.appendChild(document.createTextNode(' Scraping in progress...'));
-        el.className = 'scrape-status running';
-      } else if (data.last_status === 'success') {
-        el.textContent = '';
-        const checkIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        checkIcon.setAttribute('width', '12');
-        checkIcon.setAttribute('height', '12');
-        checkIcon.setAttribute('viewBox', '0 0 24 24');
-        checkIcon.setAttribute('fill', 'none');
-        checkIcon.setAttribute('stroke', 'currentColor');
-        checkIcon.setAttribute('stroke-width', '2.5');
-        checkIcon.setAttribute('stroke-linecap', 'round');
-        checkIcon.setAttribute('stroke-linejoin', 'round');
-        checkIcon.style.verticalAlign = 'middle';
-        checkIcon.style.marginRight = '4px';
-        checkIcon.innerHTML = '<polyline points="20 6 9 17 4 12"></polyline>';
-        el.appendChild(checkIcon);
-        el.appendChild(document.createTextNode(` Last run: ${data.last_run ? new Date(data.last_run).toLocaleDateString() : 'N/A'}`));
-        el.className = 'scrape-status success';
-        document.getElementById('apiCount').textContent = `${data.total_apis_stored} APIs`;
-        await loadAPIs();
-        await loadPlatforms();
-      } else if (data.last_status && data.last_status.startsWith('failed')) {
-        el.textContent = '';
-        const crossIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        crossIcon.setAttribute('width', '12');
-        crossIcon.setAttribute('height', '12');
-        crossIcon.setAttribute('viewBox', '0 0 24 24');
-        crossIcon.setAttribute('fill', 'none');
-        crossIcon.setAttribute('stroke', 'currentColor');
-        crossIcon.setAttribute('stroke-width', '2.5');
-        crossIcon.setAttribute('stroke-linecap', 'round');
-        crossIcon.setAttribute('stroke-linejoin', 'round');
-        crossIcon.style.verticalAlign = 'middle';
-        crossIcon.style.marginRight = '4px';
-        crossIcon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
-        el.appendChild(crossIcon);
-        el.appendChild(document.createTextNode(' Last run failed'));
-        el.className = 'scrape-status error';
-      } else {
-        el.textContent = 'Last run: never';
-        el.className = 'scrape-status';
-      }
-    } catch(e) {}
-  }
-
-  // Health
-  async function checkHealth() {
-    try {
-      const res = await fetch('/health');
-      const data = await res.json();
-      showToast(`Neo4j: ${data.neo4j} · ${data.vector_store_count} APIs · Platforms: ${(data.platforms || []).join(', ')}`, data.neo4j === 'connected' ? 'success' : 'warning');
-    } catch(e) {
-      showToast('Backend unreachable', 'error');
-    }
-  }
-
-  // Modal
-  let _uploadFile = null;
-
-  function openModal() {
-    document.getElementById('modal').classList.add('open');
-    switchModalTab('simple');
-    // Reset simple form
-    document.getElementById('fUrl').value = '';
-    document.getElementById('fUrlPlatform').value = '';
-    document.getElementById('fUrlCategory').value = '';
-    document.getElementById('scrapeProgress').classList.remove('visible');
-    document.getElementById('scrapeUrlBtn').disabled = false;
-    // Reset upload form
-    clearUploadFile();
-    document.getElementById('uploadResult').classList.remove('visible');
-  }
-
-  function onFileSelected(file) {
-    if (!file) return;
-    const allowed = ['.json', '.pdf'];
-    const ext = '.' + file.name.split('.').pop().toLowerCase();
-    if (!allowed.includes(ext)) {
-      showToast('Only .json and .pdf files are supported.', 'error');
-      return;
-    }
-    _uploadFile = file;
-    document.getElementById('uploadFileName').textContent = file.name;
-    document.getElementById('uploadFileSize').textContent = file.size > 1024*1024
-      ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
-      : (file.size / 1024).toFixed(0) + ' KB';
-    document.getElementById('uploadFileInfo').classList.add('visible');
-    document.getElementById('uploadBtn').disabled = false;
-  }
-
-  function clearUploadFile() {
-    _uploadFile = null;
-    document.getElementById('fileInput').value = '';
-    document.getElementById('uploadFileInfo').classList.remove('visible');
-    document.getElementById('uploadBtn').disabled = true;
-  }
-
-  async function uploadFile() {
-    if (!_uploadFile) return;
-    const btn = document.getElementById('uploadBtn');
-    const result = document.getElementById('uploadResult');
-    btn.disabled = true;
-    btn.textContent = 'Uploading...';
-    result.classList.remove('visible');
-
-    try {
-      const form = new FormData();
-      form.append('file', _uploadFile);
-      const res = await fetch('/api/upload', { method: 'POST', body: form });
-      const data = await res.json();
-
-      if (data.count > 0) {
-        showToast(`${data.count} API${data.count !== 1 ? 's' : ''} added from "${_uploadFile.name}"`, 'success');
-        result.textContent = `Added: ${data.added.slice(0, 5).join(', ')}${data.added.length > 5 ? ` … and ${data.added.length - 5} more` : ''}` +
-          (data.errors.length ? `\nErrors: ${data.errors.join('; ')}` : '');
-        result.classList.add('visible');
-        await loadAPIs();
-        await loadPlatforms();
-        setTimeout(closeModal, 1800);
-      } else {
-        showToast('No APIs found in that file.', 'warning');
-        result.textContent = data.errors.length ? `Errors: ${data.errors.join('; ')}` : 'No entries could be parsed.';
-        result.classList.add('visible');
-        btn.disabled = false;
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Upload';
-      }
-    } catch(e) {
-      showToast('Upload failed. Is the server running?', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>Upload';
-    }
-  }
-  function closeModal() { document.getElementById('modal').classList.remove('open'); }
-
-  function switchModalTab(tab) {
-    document.getElementById('tabSimple').classList.toggle('active', tab === 'simple');
-    document.getElementById('tabAdvanced').classList.toggle('active', tab === 'advanced');
-    document.getElementById('tabUpload').classList.toggle('active', tab === 'upload');
-    document.getElementById('panelSimple').classList.toggle('active', tab === 'simple');
-    document.getElementById('panelAdvanced').classList.toggle('active', tab === 'advanced');
-    document.getElementById('panelUpload').classList.toggle('active', tab === 'upload');
-    if (tab === 'advanced') {
-      setTimeout(() => document.getElementById('fName').focus(), 50);
-    } else if (tab === 'simple') {
-      setTimeout(() => document.getElementById('fUrl').focus(), 50);
-    }
-  }
-
-  function toggleOptionalFields() {
-    const toggle = document.getElementById('optionalToggle');
-    const content = document.getElementById('optionalContent');
-    toggle.classList.toggle('expanded');
-    content.classList.toggle('visible');
-  }
-
-  async function scrapeUrl() {
-    const url = document.getElementById('fUrl').value.trim();
-    if (!url) { showToast('Please enter a documentation URL.', 'error'); return; }
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      showToast('URL must start with http:// or https://', 'error'); return;
-    }
-
-    const platform = document.getElementById('fUrlPlatform').value.trim() || 'Imported';
-    const category = document.getElementById('fUrlCategory').value.trim() || 'General';
-
-    const progress = document.getElementById('scrapeProgress');
-    const btn = document.getElementById('scrapeUrlBtn');
-    progress.classList.add('visible');
-    document.getElementById('scrapeProgressText').textContent = 'Scraping page and extracting APIs...';
-    btn.disabled = true;
-
-    try {
-      const res = await fetch('/admin/scrape/url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, platform, category }),
-      });
-      const data = await res.json();
-
-      if (data.status === 'success') {
-        showToast(data.message, 'success');
-        closeModal();
-        await loadAPIs();
-        await loadPlatforms();
-      } else {
-        document.getElementById('scrapeProgressText').textContent = data.message || 'Failed to extract APIs.';
-        showToast(data.message || 'Scraping failed.', 'error');
-      }
-    } catch(e) {
-      showToast('Connection error. Is the server running?', 'error');
-      document.getElementById('scrapeProgressText').textContent = 'Connection error.';
-    } finally {
-      btn.disabled = false;
-      setTimeout(() => progress.classList.remove('visible'), 3000);
-    }
-  }
-
-  document.getElementById('fInternal').addEventListener('change', function() {
-    document.getElementById('internalNotesGroup').style.display = this.checked ? 'block' : 'none';
-  });
-
-  async function saveAPI() {
-    const name = document.getElementById('fName').value.trim();
-    const platform = document.getElementById('fPlatform').value.trim();
-    const plain = document.getElementById('fPlain').value.trim();
-    if (!name || !platform || !plain) { showToast('Name, Platform, and Plain Explanation are required.', 'error'); return; }
-    try {
-      const res = await fetch('/api/apis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name, platform,
-          category: document.getElementById('fCategory').value.trim() || platform,
-          method: document.getElementById('fMethod').value,
-          endpoint: document.getElementById('fEndpoint').value.trim(),
-          base_url: document.getElementById('fBaseUrl').value.trim(),
-          auth: document.getElementById('fAuth').value.trim(),
-          description: document.getElementById('fDesc').value.trim(),
-          plain_explanation: plain,
-          is_internal: document.getElementById('fInternal').checked,
-          internal_notes: document.getElementById('fInternalNotes').value.trim(),
-        }),
-      });
-      showToast(`"${name}" added!`, 'success');
-      closeModal();
-      await loadAPIs();
-      await loadPlatforms();
-    } catch(e) { showToast('Failed to save.', 'error'); }
-  }
-
-  async function deleteAPI(id, e) {
-    e.stopPropagation();
-    await fetch(`/api/apis/${id}`, { method: 'DELETE' });
-    showToast('Removed.', 'success');
-    await loadAPIs();
-    await loadPlatforms();
-  }
-
-  // Toast
-  function showToast(msg, type = 'success') {
-    const t = document.getElementById('toast');
-    t.className = `toast ${type} show`;
-    t.textContent = msg;
-    setTimeout(() => { t.className = 'toast'; }, 4000);
-  }
-
-  function escHtml(s) {
-    if (!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
-
-  init();
-</script>
+  <script src="/static/app.js"></script>
 </body>
 </html>

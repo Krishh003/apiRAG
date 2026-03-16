@@ -242,6 +242,7 @@ class PlanningHandler:
                 "endpoint": meta.get("endpoint", ""),
                 "doc_url": meta.get("doc_url", ""),
                 "source": "vector",
+                "relevance": round(result.get("rerank_score", result.get("vector_relevance", 0)), 3),
             })
 
         context = "\n\n---\n\n".join(context_parts[:8])
@@ -261,9 +262,16 @@ class PlanningHandler:
 
         plan_steps = self._parse_plan_steps(plan_text)
 
+        p_all = [s["relevance"] for s in sources if "relevance" in s]
+        p_good = [s for s in p_all if s >= 0.15]
+        p_scores = p_good if p_good else p_all
+        raw = round(sum(p_scores) / len(p_scores), 2) if p_scores else round(min(len(sources), 5) / 5, 2)
+        confidence_label = "high" if raw >= 0.70 else "medium" if raw >= 0.40 else "low"
         return QueryResponse(
             answer=plan_text,
             query_type="planning",
             sources=sources,
             plan_steps=plan_steps,
+            confidence=raw,
+            confidence_label=confidence_label,
         )

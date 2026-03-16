@@ -2,6 +2,7 @@
   {
     "name": "Shopify Admin API — List Orders",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "GET /admin/api/2024-10/orders.json",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header (or Basic Auth with API key + password for private apps)",
@@ -11,6 +12,7 @@
   {
     "name": "Shopify Admin API — Get Single Order",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "GET /admin/api/2024-10/orders/{order_id}.json",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header",
@@ -20,6 +22,7 @@
   {
     "name": "Shopify Admin API — Create Refund",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "POST /admin/api/2024-10/orders/{order_id}/refunds.json",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header",
@@ -29,6 +32,7 @@
   {
     "name": "Shopify Admin API — List Products",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "GET /admin/api/2024-10/products.json",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header",
@@ -38,6 +42,7 @@
   {
     "name": "Shopify Admin API — List Customers",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "GET /admin/api/2024-10/customers.json",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header",
@@ -47,6 +52,7 @@
   {
     "name": "Shopify Admin API — Create Webhook",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "POST /admin/api/2024-10/webhooks.json",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header",
@@ -56,6 +62,7 @@
   {
     "name": "Shopify Admin API — List Webhooks",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "GET /admin/api/2024-10/webhooks.json",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header",
@@ -65,6 +72,7 @@
   {
     "name": "Shopify Admin API — Incremental Orders Extraction Strategy",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "parameter reference — since_id and updated_at_min",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "Admin API access token in X-Shopify-Access-Token header",
@@ -74,6 +82,7 @@
   {
     "name": "Shopify Webhooks — Order Data Mismatch with GA4",
     "category": "Shopify",
+    "version": "2024-10",
     "endpoint": "reference — Shopify vs GA4 order count differences",
     "base_url": "https://{store-name}.myshopify.com",
     "auth": "N/A — conceptual reference",

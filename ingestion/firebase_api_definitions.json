@@ -2,6 +2,7 @@
   {
     "name": "Firebase Analytics — Auto-Collected Events Reference",
     "category": "Firebase",
+    "version": "SDK",
     "endpoint": "client-side SDK — logged automatically by Firebase SDK",
     "base_url": "https://firebase.google.com/docs/analytics/events",
     "auth": "Firebase App (google-services.json for Android, GoogleService-Info.plist for iOS)",
@@ -11,6 +12,7 @@
   {
     "name": "Firebase Analytics — Recommended Ecommerce Events",
     "category": "Firebase",
+    "version": "SDK",
     "endpoint": "client-side SDK — FirebaseAnalytics.logEvent()",
     "base_url": "https://firebase.google.com/docs/analytics/measure-ecommerce",
     "auth": "Firebase App (google-services.json / GoogleService-Info.plist)",
@@ -20,6 +22,7 @@
   {
     "name": "Firebase Analytics — Custom Event Logging",
     "category": "Firebase",
+    "version": "SDK",
     "endpoint": "client-side SDK — FirebaseAnalytics.logEvent(eventName, parameters)",
     "base_url": "https://firebase.google.com/docs/analytics/events",
     "auth": "Firebase App (google-services.json / GoogleService-Info.plist)",
@@ -29,6 +32,7 @@
   {
     "name": "Firebase Analytics — User Properties",
     "category": "Firebase",
+    "version": "SDK",
     "endpoint": "client-side SDK — FirebaseAnalytics.setUserProperty(name, value)",
     "base_url": "https://firebase.google.com/docs/analytics/user-properties",
     "auth": "Firebase App (google-services.json / GoogleService-Info.plist)",
@@ -38,6 +42,7 @@
   {
     "name": "Firebase Analytics — Firebase to GA4 Event Mapping",
     "category": "Firebase",
+    "version": "SDK",
     "endpoint": "conceptual reference — Firebase SDK to GA4 property linking",
     "base_url": "https://firebase.google.com/docs/analytics/configure-data-collection",
     "auth": "Firebase project linked to GA4 property",
@@ -47,6 +52,7 @@
   {
     "name": "Firebase Analytics — GTM Firebase Tag Configuration",
     "category": "Firebase",
+    "version": "SDK",
     "endpoint": "configuration reference — Google Tag Manager for Firebase (GTM4F)",
     "base_url": "https://developers.google.com/tag-platform/tag-manager/firebase",
     "auth": "GTM container ID + Firebase App",

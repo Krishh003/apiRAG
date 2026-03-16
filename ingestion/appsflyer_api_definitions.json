@@ -2,6 +2,7 @@
   {
     "name": "AppsFlyer Pull API — Installs Report",
     "category": "AppsFlyer",
+    "version": "v5",
     "endpoint": "GET /export/{app_id}/installs_report/v5",
     "base_url": "https://hq1.appsflyer.com",
     "auth": "API V2 token in Authorization header (Bearer {token})",
@@ -11,6 +12,7 @@
   {
     "name": "AppsFlyer Pull API — In-App Events Report",
     "category": "AppsFlyer",
+    "version": "v5",
     "endpoint": "GET /export/{app_id}/in_app_events_report/v5",
     "base_url": "https://hq1.appsflyer.com",
     "auth": "API V2 token in Authorization header (Bearer {token})",
@@ -20,6 +22,7 @@
   {
     "name": "AppsFlyer Pull API — Uninstall Events Report",
     "category": "AppsFlyer",
+    "version": "v5",
     "endpoint": "GET /export/{app_id}/uninstall_events_report/v5",
     "base_url": "https://hq1.appsflyer.com",
     "auth": "API V2 token in Authorization header (Bearer {token})",
@@ -29,6 +32,7 @@
   {
     "name": "AppsFlyer Pull API — Aggregate Performance Report",
     "category": "AppsFlyer",
+    "version": "v5",
     "endpoint": "GET /export/{app_id}/partners_by_date_report/v5",
     "base_url": "https://hq1.appsflyer.com",
     "auth": "API V2 token in Authorization header (Bearer {token})",
@@ -38,6 +42,7 @@
   {
     "name": "AppsFlyer Pull API — Retargeting Conversions Report",
     "category": "AppsFlyer",
+    "version": "v5",
     "endpoint": "GET /export/{app_id}/retargeting_in_app_events_report/v5",
     "base_url": "https://hq1.appsflyer.com",
     "auth": "API V2 token in Authorization header (Bearer {token})",
@@ -47,6 +52,7 @@
   {
     "name": "AppsFlyer vs MMP Attribution — Reconciliation Concepts",
     "category": "AppsFlyer",
+    "version": "v5",
     "endpoint": "conceptual reference — attribution methodology",
     "base_url": "https://support.appsflyer.com",
     "auth": "N/A — conceptual reference",

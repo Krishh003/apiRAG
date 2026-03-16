@@ -2,6 +2,7 @@
   {
     "name": "GA4 Data API — Run Report",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "POST /v1beta/{property}/runReport",
     "base_url": "https://analyticsdata.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
@@ -11,6 +12,7 @@
   {
     "name": "GA4 Data API — Run Realtime Report",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "POST /v1beta/{property}/runRealtimeReport",
     "base_url": "https://analyticsdata.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
@@ -20,6 +22,7 @@
   {
     "name": "GA4 Data API — Batch Run Reports",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "POST /v1beta/{property}/batchRunReports",
     "base_url": "https://analyticsdata.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
@@ -29,6 +32,7 @@
   {
     "name": "GA4 Data API — Get Metadata",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "GET /v1beta/{property}/metadata",
     "base_url": "https://analyticsdata.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
@@ -38,6 +42,7 @@
   {
     "name": "GA4 Data API — Run Pivot Report",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "POST /v1beta/{property}/runPivotReport",
     "base_url": "https://analyticsdata.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
@@ -47,6 +52,7 @@
   {
     "name": "GA4 Admin API — List Properties",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "GET /v1beta/properties",
     "base_url": "https://analyticsadmin.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
@@ -56,6 +62,7 @@
   {
     "name": "GA4 Admin API — List Data Streams",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "GET /v1beta/{parent}/dataStreams",
     "base_url": "https://analyticsadmin.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly) or Service Account JSON key",
@@ -65,6 +72,7 @@
   {
     "name": "GA4 Ecommerce Events — Standard Event Reference",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "client-side event (gtag / GTM / Firebase SDK)",
     "base_url": "https://developers.google.com/analytics/devguides/collection/ga4/ecommerce",
     "auth": "GA4 Measurement ID (G-XXXXXXXXXX)",
@@ -74,6 +82,7 @@
   {
     "name": "GA4 Acquisition Dimensions — API Field Reference",
     "category": "GA4",
+    "version": "v1beta",
     "endpoint": "dimension reference — used in runReport requests",
     "base_url": "https://analyticsdata.googleapis.com",
     "auth": "OAuth 2.0 (scope: analytics.readonly)",

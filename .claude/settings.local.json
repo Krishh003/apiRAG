@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(curl -s -X POST http://localhost:8000/admin/scrape -H \"Content-Type: application/json\" -d '{}')",
-      "Bash(curl -s http://localhost:8000/admin/scrape/status)"
+      "Bash(curl -s http://localhost:8000/admin/scrape/status)",
+      "WebSearch",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python -c \":*)",
+      "Bash(grep -r \"rerank_score\\\\|vector_relevance\\\\|relevance\\\\|source\" 'c:\\\\Users\\\\Krishh\\\\Pristine Forests\\\\agenticAI\\\\apiRAG' --include=*.py)"
     ]
   }
 }

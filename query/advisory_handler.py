@@ -25,6 +25,7 @@ import google.generativeai as genai
 from retrieval.vector_store import VectorStore
 from retrieval.reranker import Reranker
 from models import QueryResponse
+from query.lookup_handler import _compute_confidence
 
 logger = logging.getLogger(__name__)
 
@@ -133,9 +134,12 @@ class AdvisoryHandler:
             logger.error(f"Gemini Pro advisory generation failed: {e}")
             answer = "Sorry, I ran into an error generating the answer. Please try again."
 
+        confidence, confidence_label = _compute_confidence(sources)
         return QueryResponse(
             answer=answer,
             query_type="advisory",
             sources=sources,
             plan_steps=[],
+            confidence=confidence,
+            confidence_label=confidence_label,
         )

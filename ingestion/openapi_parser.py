@@ -6,8 +6,11 @@ Platforms handled here (they publish public OpenAPI specs):
   - SendGrid    → github.com/twilio/sendgrid-oai
   - Stripe      → github.com/stripe/openapi
   - Google Maps → uses REST Discovery API
+  - WhatsApp    → github.com/facebook/openapi (business-messaging-api_v23.0.yaml)
 
-Meta/WhatsApp/Instagram are NOT handled here — they require Playwright scraping.
+Meta Graph, Instagram, Meta Ads, and Meta Pixel/CAPI are NOT handled here —
+Meta has not published official OpenAPI specs for those APIs.
+Those platforms use curated JSON files instead (see ingestion/meta_api_definitions.json etc.).
 """
 
 import httpx
@@ -31,6 +34,9 @@ OPENAPI_SOURCES = {
     ],
     "Stripe": [
         "https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.json",
+    ],
+    "WhatsApp": [
+        "https://raw.githubusercontent.com/facebook/openapi/main/business-messaging-api_v23.0.yaml",
     ],
 }
 
@@ -56,6 +62,32 @@ STRIPE_ENDPOINT_FILTER = [
     "/v1/webhook_endpoints/{webhook_endpoint}",
     "/v1/balance",
     "/v1/payouts",
+]
+
+# WhatsApp endpoints we care about (spec has 78 paths — filter to user-facing ones)
+WHATSAPP_ENDPOINT_FILTER = [
+    "/whatsapp/webhooks",
+    "/{Version}/{Phone-Number-ID}/messages",
+    "/{Version}/{Phone-Number-ID}/media",
+    "/{Version}/{Media-ID}",
+    "/{Version}/{Phone-Number-ID}/marketing_messages",
+    "/{Version}/{Phone-Number-ID}/message_history",
+    "/{Version}/{Phone-Number-ID}/message_qrdls",
+    "/{Version}/{Phone-Number-ID}/message_qrdls/{QR-Code-ID}",
+    "/{Version}/{Phone-Number-ID}",
+    "/{Version}/{Phone-Number-ID}/register",
+    "/{Version}/{Phone-Number-ID}/verify_code",
+    "/{Version}/{Phone-Number-ID}/request_code",
+    "/{Version}/{Phone-Number-ID}/whatsapp_business_profile",
+    "/{Version}/{Phone-Number-ID}/settings",
+    "/{Version}/{Phone-Number-ID}/conversational_automation",
+    "/{Version}/{WABA-ID}/message_templates",
+    "/{Version}/{TEMPLATE_ID}",
+    "/{Version}/{WABA-ID}",
+    "/{Version}/{WABA-ID}/phone_numbers",
+    "/{Version}/{WABA-ID}/flows",
+    "/{Version}/{Flow-ID}",
+    "/{Version}/{Flow-ID}/publish",
 ]
 
 # SendGrid endpoints to include
@@ -151,6 +183,7 @@ class OpenAPIParser:
         platform: str,
         category: str,
         base_url: str,
+        version: str = "",
     ) -> Optional[APIEntry]:
         """Convert a single OpenAPI operation to an APIEntry."""
         summary = operation.get("summary", "")
@@ -171,6 +204,7 @@ class OpenAPIParser:
             name=name,
             platform=platform,
             category=category,
+            version=version,
             method=method.upper(),
             endpoint=path,
             base_url=base_url,
@@ -208,6 +242,7 @@ class OpenAPIParser:
     def parse_twilio(self, spec: Dict, spec_url: str) -> List[APIEntry]:
         entries = []
         base_url = self._get_base_url(spec)
+        version = spec.get("info", {}).get("version", "")
 
         # Determine category from URL
         if "messaging" in spec_url:
@@ -225,7 +260,7 @@ class OpenAPIParser:
                 if not operation:
                     continue
                 entry = self._operation_to_entry(
-                    spec, path, method, operation, "Twilio", category, base_url
+                    spec, path, method, operation, "Twilio", category, base_url, version
                 )
                 if entry:
                     entries.append(entry)
@@ -234,6 +269,7 @@ class OpenAPIParser:
     def parse_sendgrid(self, spec: Dict) -> List[APIEntry]:
         entries = []
         base_url = self._get_base_url(spec)
+        version = spec.get("info", {}).get("version", "")
 
         for path, path_item in spec.get("paths", {}).items():
             # Filter to relevant endpoints only
@@ -246,7 +282,7 @@ class OpenAPIParser:
                 tags = operation.get("tags", ["Email"])
                 category = tags[0] if tags else "Email"
                 entry = self._operation_to_entry(
-                    spec, path, method, operation, "SendGrid", category, base_url
+                    spec, path, method, operation, "SendGrid", category, base_url, version
                 )
                 if entry:
                     entries.append(entry)
@@ -255,6 +291,7 @@ class OpenAPIParser:
     def parse_stripe(self, spec: Dict) -> List[APIEntry]:
         entries = []
         base_url = self._get_base_url(spec)
+        version = spec.get("info", {}).get("version", "")
 
         for path, path_item in spec.get("paths", {}).items():
             if path not in STRIPE_ENDPOINT_FILTER:
@@ -281,7 +318,29 @@ class OpenAPIParser:
                 else:
                     category = "Stripe"
                 entry = self._operation_to_entry(
-                    spec, path, method, operation, "Stripe", category, base_url
+                    spec, path, method, operation, "Stripe", category, base_url, version
+                )
+                if entry:
+                    entries.append(entry)
+        return entries
+
+    def parse_meta_whatsapp(self, spec: Dict) -> List[APIEntry]:
+        """Parse the official Meta WhatsApp Business API OpenAPI spec (v23.0)."""
+        entries = []
+        base_url = "https://graph.facebook.com"
+        version = spec.get("info", {}).get("version", "v23.0")
+
+        for path, path_item in spec.get("paths", {}).items():
+            if path not in WHATSAPP_ENDPOINT_FILTER:
+                continue
+            for method in ["get", "post", "put", "patch", "delete"]:
+                operation = path_item.get(method)
+                if not operation:
+                    continue
+                tags = operation.get("tags", ["Messaging"])
+                category = tags[0] if tags else "Messaging"
+                entry = self._operation_to_entry(
+                    spec, path, method, operation, "WhatsApp", category, base_url, version
                 )
                 if entry:
                     entries.append(entry)
@@ -300,6 +359,7 @@ class OpenAPIParser:
                 name="Google Maps Geocoding — Address to Coordinates",
                 platform="Google Maps",
                 category="Geocoding",
+                version="v3",
                 method="GET",
                 endpoint="/maps/api/geocode/json",
                 base_url="https://maps.googleapis.com",
@@ -318,6 +378,7 @@ class OpenAPIParser:
                 name="Google Maps Reverse Geocoding — Coordinates to Address",
                 platform="Google Maps",
                 category="Geocoding",
+                version="v3",
                 method="GET",
                 endpoint="/maps/api/geocode/json",
                 base_url="https://maps.googleapis.com",
@@ -335,6 +396,7 @@ class OpenAPIParser:
                 name="Google Maps Distance Matrix",
                 platform="Google Maps",
                 category="Distance & Directions",
+                version="v3",
                 method="GET",
                 endpoint="/maps/api/distancematrix/json",
                 base_url="https://maps.googleapis.com",
@@ -354,6 +416,7 @@ class OpenAPIParser:
                 name="Google Maps Places Autocomplete",
                 platform="Google Maps",
                 category="Places",
+                version="v3",
                 method="GET",
                 endpoint="/maps/api/place/autocomplete/json",
                 base_url="https://maps.googleapis.com",
@@ -373,6 +436,7 @@ class OpenAPIParser:
                 name="Google Maps Place Details",
                 platform="Google Maps",
                 category="Places",
+                version="v3",
                 method="GET",
                 endpoint="/maps/api/place/details/json",
                 base_url="https://maps.googleapis.com",
@@ -394,7 +458,7 @@ class OpenAPIParser:
     def parse_all(self, platforms: list = None) -> List[APIEntry]:
         """Parse all configured OpenAPI sources. Returns list of APIEntry objects."""
         all_entries: List[APIEntry] = []
-        target = set(platforms) if platforms else {"Twilio", "SendGrid", "Stripe", "Google Maps"}
+        target = set(platforms) if platforms else {"Twilio", "SendGrid", "Stripe", "Google Maps", "WhatsApp"}
 
         if "Twilio" in target:
             for url in OPENAPI_SOURCES["Twilio"]:
@@ -422,6 +486,13 @@ class OpenAPIParser:
             entries = self.parse_google_maps()
             logger.info(f"Google Maps: {len(entries)} endpoints defined")
             all_entries.extend(entries)
+
+        if "WhatsApp" in target:
+            spec = self._fetch(OPENAPI_SOURCES["WhatsApp"][0])
+            if spec:
+                entries = self.parse_meta_whatsapp(spec)
+                logger.info(f"WhatsApp: {len(entries)} endpoints parsed")
+                all_entries.extend(entries)
 
         logger.info(f"OpenAPI parser total: {len(all_entries)} entries")
         return all_entries

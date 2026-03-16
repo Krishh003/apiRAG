@@ -25,6 +25,7 @@ class APIEntry(BaseModel):
     name: str
     platform: str                          # e.g. WhatsApp, Meta, Stripe
     category: str                          # e.g. Messaging, Payments, Ads
+    version: str                           # e.g. v1, v23.0, 2024-10
 
     # Technical
     method: str = "GET"                    # HTTP verb
@@ -60,9 +61,11 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     answer: str
-    query_type: str                        # "lookup" or "planning"
+    query_type: str                        # "lookup", "planning", or "advisory"
     sources: List[dict] = []
     plan_steps: List[dict] = []           # Only populated for planning queries
+    confidence: float = 0.0               # Answer-level confidence [0.0, 1.0]
+    confidence_label: str = "low"         # "high", "medium", or "low"
 
 
 class ScrapeRequest(BaseModel):

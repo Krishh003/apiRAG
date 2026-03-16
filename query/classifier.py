@@ -1,10 +1,11 @@
 """
-Query Classifier — determines if a query is LOOKUP, PLANNING, or ADVISORY.
+Query Classifier — determines if a query is LOOKUP, PLANNING, ADVISORY, or COMPARISON.
 
-LOOKUP   — "What does X API do?" → simple retrieval, Gemini Flash
-PLANNING — "How do I achieve Y?" → graph traversal + multi-step plan, Gemini Pro
-ADVISORY — "Why do Shopify numbers differ from GA4?" / "What SQL query calculates ROAS?"
-           → data engineering expert knowledge + KB context, Gemini Pro
+LOOKUP     — "What does X API do?" → simple retrieval, Gemini Flash
+PLANNING   — "How do I achieve Y?" → graph traversal + multi-step plan, Gemini Pro
+ADVISORY   — "Why do Shopify numbers differ from GA4?" / "What SQL query calculates ROAS?"
+             → data engineering expert knowledge + KB context, Gemini Pro
+COMPARISON — "What is the difference between X, Y, and Z?" → per-concept retrieval, Gemini Flash
 
 Uses a fast keyword heuristic first, Gemini Flash as fallback for ambiguous cases.
 """
@@ -92,6 +93,19 @@ PLANNING_SIGNALS = [
     r"\bguide me\b",
 ]
 
+# Keywords strongly indicating a COMPARISON query
+# Checked after advisory, before planning/lookup
+COMPARISON_SIGNALS = [
+    r"\bdifference between\b",
+    r"\bcompare\b",
+    r"\bcomparison\b",
+    r"\bvs\.?\b",
+    r"\bversus\b",
+    r"\bhow does .* differ\b",
+    r"\bdistinguish\b",
+    r"\bcontrast\b",
+]
+
 # Keywords strongly indicating a LOOKUP query
 LOOKUP_SIGNALS = [
     r"\bwhat (is|does|are)\b",
@@ -100,29 +114,32 @@ LOOKUP_SIGNALS = [
     r"\btell me about\b",
     r"\bwhat.*(do|does).*(do|mean|return|accept)\b",
     r"\bwhat.*(purpose|point|use|function)\b",
-    r"\bdifference between\b",
     r"\bwhen (to|should)\b",
     r"\blist (all|the)?\b",
     r"\bshow me\b",
 ]
 
-CLASSIFY_PROMPT = """Classify this user query into exactly one of three categories: LOOKUP, PLANNING, or ADVISORY.
+CLASSIFY_PROMPT = """Classify this user query into exactly one of four categories: LOOKUP, PLANNING, ADVISORY, or COMPARISON.
 
-LOOKUP   = The user wants to understand what a specific API does, what it returns, or how it works.
-           Examples: "What does the Stripe Payment Intent API do?", "What fields does the GA4 Run Report return?"
+LOOKUP     = The user wants to understand what a specific API does, what it returns, or how it works.
+             Examples: "What does the Stripe Payment Intent API do?", "What fields does the GA4 Run Report return?"
 
-PLANNING = The user wants to know what API calls to make, in what order, to achieve a specific outcome.
-           Examples: "How do I charge a customer?", "What APIs do I need to send a WhatsApp message?"
+PLANNING   = The user wants to know what API calls to make, in what order, to achieve a specific outcome.
+             Examples: "How do I charge a customer?", "What APIs do I need to send a WhatsApp message?"
 
-ADVISORY = The user wants data engineering design advice, SQL queries, diagnostic help, attribution
-           explanations, schema design, pipeline patterns, dashboard architecture, or wants to understand
-           why numbers differ between platforms.
-           Examples: "Why do Shopify purchases differ from GA4?", "What SQL calculates daily revenue?",
-           "How should we design a warehouse schema?", "Why is ROAS decreasing?"
+ADVISORY   = The user wants data engineering design advice, SQL queries, diagnostic help, attribution
+             explanations, schema design, pipeline patterns, dashboard architecture, or wants to understand
+             why numbers differ between platforms.
+             Examples: "Why do Shopify purchases differ from GA4?", "What SQL calculates daily revenue?",
+             "How should we design a warehouse schema?", "Why is ROAS decreasing?"
+
+COMPARISON = The user wants to compare or contrast two or more specific API operations or endpoints.
+             Examples: "What is the difference between capturing and confirming a PaymentIntent?",
+             "Compare Twilio SMS vs WhatsApp messages", "How does Create differ from Update?"
 
 Query: "{query}"
 
-Respond with exactly one word: LOOKUP, PLANNING, or ADVISORY"""
+Respond with exactly one word: LOOKUP, PLANNING, ADVISORY, or COMPARISON"""
 
 
 class QueryClassifier:
@@ -137,7 +154,7 @@ class QueryClassifier:
     def classify(self, query: str) -> Tuple[str, str]:
         """
         Returns (query_type, method) where:
-          query_type: "lookup", "planning", or "advisory"
+          query_type: "lookup", "planning", "advisory", or "comparison"
           method: "heuristic" or "gemini" (for debugging)
         """
         query_lower = query.lower().strip()
@@ -145,6 +162,10 @@ class QueryClassifier:
         # Score each category
         advisory_score = sum(
             1 for pattern in ADVISORY_SIGNALS
+            if re.search(pattern, query_lower)
+        )
+        comparison_score = sum(
+            1 for pattern in COMPARISON_SIGNALS
             if re.search(pattern, query_lower)
         )
         planning_score = sum(
@@ -156,11 +177,13 @@ class QueryClassifier:
             if re.search(pattern, query_lower)
         )
 
-        # Advisory takes priority when it has the highest score
-        max_score = max(advisory_score, planning_score, lookup_score)
+        # Priority: advisory > comparison > planning > lookup
+        max_score = max(advisory_score, comparison_score, planning_score, lookup_score)
         if max_score >= 1:
             if advisory_score == max_score:
                 return "advisory", "heuristic"
+            if comparison_score == max_score:
+                return "comparison", "heuristic"
             if planning_score == max_score:
                 return "planning", "heuristic"
             return "lookup", "heuristic"
@@ -173,6 +196,8 @@ class QueryClassifier:
             result = response.text.strip().upper()
             if "ADVISORY" in result:
                 return "advisory", "gemini"
+            if "COMPARISON" in result:
+                return "comparison", "gemini"
             if "PLANNING" in result:
                 return "planning", "gemini"
             return "lookup", "gemini"

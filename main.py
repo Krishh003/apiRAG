@@ -32,6 +32,7 @@ classifier = None
 lookup_handler = None
 planning_handler = None
 advisory_handler = None
+comparison_handler = None
 scheduler = None
 
 
@@ -39,7 +40,7 @@ scheduler = None
 async def lifespan(app: FastAPI):
     """Initialize all components on startup."""
     global vector_store, graph_store, reranker, classifier
-    global lookup_handler, planning_handler, advisory_handler, scheduler
+    global lookup_handler, planning_handler, advisory_handler, comparison_handler, scheduler
 
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
@@ -77,6 +78,10 @@ async def lifespan(app: FastAPI):
     from query.advisory_handler import AdvisoryHandler
     advisory_handler = AdvisoryHandler(vector_store, reranker, gemini_key)
 
+    logger.info("Initializing comparison handler...")
+    from query.comparison_handler import ComparisonHandler
+    comparison_handler = ComparisonHandler(vector_store, reranker, gemini_key)
+
     logger.info("Initializing ingestion scheduler...")
     from ingestion.scheduler import IngestionScheduler
     scheduler = IngestionScheduler(vector_store, graph_store, gemini_key)
@@ -108,6 +113,7 @@ class ManualAPIEntry(BaseModel):
     name: str
     platform: str
     category: str
+    version: str = ""
     method: str = "GET"
     endpoint: str
     base_url: str = ""
@@ -156,6 +162,12 @@ async def query(req: QueryRequest):
             platform_filter=req.platform_filter,
             category_filter=req.category_filter,
         )
+    elif query_type == "comparison":
+        result = comparison_handler.handle(
+            req.question,
+            platform_filter=req.platform_filter,
+            category_filter=req.category_filter,
+        )
     else:
         result = lookup_handler.handle(
             req.question,
@@ -168,6 +180,8 @@ async def query(req: QueryRequest):
         "query_type": result.query_type,
         "sources": result.sources,
         "plan_steps": result.plan_steps,
+        "confidence": result.confidence,
+        "confidence_label": result.confidence_label,
     }
 
 
@@ -181,6 +195,7 @@ async def add_api(entry: ManualAPIEntry):
         name=entry.name,
         platform=entry.platform,
         category=entry.category,
+        version=entry.version,
         method=entry.method,
         endpoint=entry.endpoint,
         base_url=entry.base_url,
@@ -234,6 +249,7 @@ async def upload_file(file: UploadFile = File(...)):
             name=obj.get("name", "Unknown"),
             platform=obj.get("platform", obj.get("category", "Uncategorized")),
             category=obj.get("category", "General"),
+            version=obj.get("version", ""),
             method=obj.get("method", "GET"),
             endpoint=obj.get("endpoint", ""),
             base_url=obj.get("base_url", ""),
@@ -293,8 +309,35 @@ async def upload_file(file: UploadFile = File(...)):
                     }))
                 except Exception as e:
                     errors.append(f"Page {i}: {e}")
+
+    elif filename.endswith(".md"):
+        text = content.decode("utf-8", errors="replace").strip()
+        # Split by headers (H1, H2, H3)
+        sections = re.split(r"\n(?=#+\s+)", "\n" + text)
+        for i, section in enumerate(sections):
+            section = section.strip()
+            if not section:
+                continue
+            
+            lines = section.splitlines()
+            # If the first line is a header, use it as the name
+            if lines[0].startswith("#"):
+                name = lines[0].lstrip("#").strip()
+            else:
+                name = f"Markdown Section {i+1} — {file.filename}"
+            
+            try:
+                added.append(push_entry({
+                    "name": name,
+                    "platform": "Imported",
+                    "category": "Markdown Import",
+                    "description": section,
+                    "plain_explanation": section,
+                }))
+            except Exception as e:
+                errors.append(f"Section {i}: {e}")
     else:
-        raise HTTPException(400, "Unsupported file type. Use .json, .csv, .txt, or .pdf")
+        raise HTTPException(400, "Unsupported file type. Use .json, .csv, .txt, .pdf, or .md")
 
     return {"added": added, "errors": errors, "count": len(added)}
 
