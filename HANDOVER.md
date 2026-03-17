@@ -9,17 +9,19 @@
 An internal RAG (Retrieval-Augmented Generation) system that lets non-technical employees
 ask plain-English questions about the APIs their company uses and get accurate answers.
 
-Two query modes:
+Four query modes:
 
 - Lookup — "What does the WhatsApp Send Message API do?" → plain English explanation
 - Planning — "How do I charge a customer?" → step-by-step API call plan with parameters
+- Advisory — "Why do Shopify numbers differ from GA4?" → data engineering expert advice
+- Comparison — "What is the difference between capturing and confirming a PaymentIntent?" → per-concept retrieval, side-by-side comparison
 
 Target users: non-technical team members who need to understand what APIs do and how to use them.
 Deployed on: internal company server (Docker available). Currently being tested on developer's local Windows machine.
 
 ---
 
-## Current State (as of 2026-03-13)
+## Current State (as of 2026-03-17)
 
 ### What is working
 
@@ -28,10 +30,11 @@ Deployed on: internal company server (Docker available). Currently being tested 
 - Neo4j graph store connects via Docker (bolt://localhost:7687) — all 177 entries ingested
 - BM25 hybrid search + Reciprocal Rank Fusion implemented
 - Cross-encoder reranker implemented
-- Query classifier (lookup vs planning vs advisory) working — three-way classification
-- Lookup handler working (Gemini 2.5 Flash, max_output_tokens: 1500, context: 1500 chars/source)
-- Planning handler working (Gemini 2.5 Pro + graph traversal)
+- Query classifier (lookup vs planning vs advisory vs comparison) working — four-way classification
+- Lookup handler working (Gemini 2.5 Flash, max_output_tokens: 1500, context: 1500 chars/source, threshold-filtered confidence)
+- Planning handler working (Gemini 2.5 Pro + graph traversal, threshold-filtered confidence)
 - Advisory handler working (Gemini 2.5 Pro, plain-English expert system prompt targeting non-technical users, KB context as grounding)
+- Comparison handler working (Gemini 2.5 Flash, per-concept retrieval + concept-specific reranking, platform coherence filtering)
 - OpenAPI ingestion pipeline working — Twilio, SendGrid, Stripe, Google Maps, **WhatsApp** parse correctly from GitHub specs
 - WhatsApp ingestion upgraded — now parsed from Meta's official OpenAPI spec (github.com/facebook/openapi, v23.0) instead of hand-curated JSON entries
 - Meta Graph API + Instagram ingestion working — curated JSON (13 entries, expanded from 9)
@@ -118,10 +121,11 @@ api-rag-v2/
 │   └── reranker.py                # Cross-encoder reranker
 │
 ├── query/
-│   ├── classifier.py              # Keyword heuristic + Gemini Flash → "lookup", "planning", or "advisory"
+│   ├── classifier.py              # Keyword heuristic + Gemini Flash → "lookup", "planning", "advisory", or "comparison"
 │   ├── lookup_handler.py          # Hybrid search → rerank → Gemini Flash (1500 token output)
 │   ├── planning_handler.py        # Keywords → graph traversal → hybrid search → rerank → Gemini Pro
-│   └── advisory_handler.py        # Hybrid search → rerank → Gemini Pro (data engineering expert)
+│   ├── advisory_handler.py        # Hybrid search → rerank → Gemini Pro (data engineering expert)
+│   └── comparison_handler.py      # Per-concept search → concept-specific rerank → Gemini Flash
 │
 └── static/
     └── index.html                 # Single-file frontend — HTML + CSS + JS, all SVG icons
@@ -184,7 +188,7 @@ and uses completely different parameter syntax.
 | Method | Route | Description |
 |---|---|---|
 | GET | / | Frontend UI |
-| POST | /api/query | Main query — auto-routes lookup vs planning |
+| POST | /api/query | Main query — auto-routes lookup / planning / advisory / comparison |
 | GET | /api/apis | List all stored APIs |
 | POST | /api/apis | Add a single API manually |
 | DELETE | /api/apis/{id} | Delete an API |
@@ -211,7 +215,7 @@ and uses completely different parameter syntax.
 ```json
 {
   "answer": "...",
-  "query_type": "lookup | planning | advisory",
+  "query_type": "lookup | planning | advisory | comparison",
   "sources": [
     {
       "name": "Stripe Create Payment Intent",
@@ -331,6 +335,23 @@ All emoji/Unicode characters removed from static/index.html and replaced with in
 - Scrape status indicators (were Unicode symbols for progress, success, failure)
 Verified via regex grep: zero emoji/Unicode characters remain.
 
+### Resolved — Comparison queries had 36% confidence (2026-03-17)
+
+Root cause: comparison queries were handled by the lookup handler, which scored all sources
+against the full comparison question (e.g. "What is the difference between capturing, creating,
+and confirming a PaymentIntent?"). Sources retrieved for individual concepts like "Capture a
+PaymentIntent" scored near-zero against the full question because the cross-encoder penalised
+the mismatch between the concept-specific document and the comparison-framed query.
+
+Additionally, the lookup handler's fallback pool (orig_results from a full-question search)
+had no match_query tags, so those documents were also scored against the comparison question,
+producing 2-3% relevance scores that dragged down the mean confidence.
+
+Resolution: created a dedicated ComparisonHandler (query/comparison_handler.py) that retrieves
+and scores each source against its own concept. Classifier updated with COMPARISON_SIGNALS
+(priority: advisory > comparison > planning > lookup). All per-concept sources now score
+80-100%, and overall confidence reaches 100% on well-covered queries.
+
 ### Issue — Internal API wrappers pending
 
 The user has internal API wrappers but details are not finalised. Do not prompt them
@@ -421,6 +442,25 @@ Advisory questions include: why numbers differ between platforms, SQL generation
 dashboard architecture, pipeline design, attribution explanations, data quality diagnostics.
 Unlike lookup, Gemini is permitted to draw on its general knowledge — KB context is supplementary grounding.
 
+### Comparison query
+
+```
+Question → classifier.py → comparison_handler.py
+                          → vector_store.hybrid_search() (full question, top_k=6 → infer allowed_platforms)
+                          → Gemini Flash concept extraction (e.g. "Create a PaymentIntent, Capture a PaymentIntent")
+                          → For each concept:
+                              → vector_store.hybrid_search(concept, top_k=4, platform_filter)
+                              → Post-filter to allowed_platforms
+                              → reranker.rerank(concept, candidates, top_k=1) — scored against concept, not full question
+                              → Take top-1 result as source
+                          → Gemini Flash (comparison-specific system prompt)
+                          → QueryResponse (query_type: comparison, sources with per-concept relevance)
+```
+
+Key design: every source is retrieved and scored against its own concept query. This ensures
+per-source relevance scores are meaningful (typically 80-100%) rather than being diluted by
+scoring against the full comparison question.
+
 ---
 
 ## Key Design Decisions
@@ -441,6 +481,27 @@ a 22-path filter (WHATSAPP_ENDPOINT_FILTER) and gets full Gemini enrichment. If 
 further specs (Graph API, Ads API etc.), add them to OPENAPI_SOURCES and write a corresponding
 parse_* method following the same pattern. The curated JSON files for Meta Graph, Instagram,
 Ads, and Pixel should be retired once official specs are available.
+
+**Comparison handler — per-concept retrieval** — comparison queries like "difference between X and Y"
+need each source scored against its own concept, not the full question. The comparison handler extracts
+concepts via Gemini Flash, then runs a separate hybrid_search + rerank per concept. The reranker scores
+each candidate against the concept string (e.g. "Capture a PaymentIntent") rather than the full comparison
+question, producing meaningful per-source relevance scores (typically 80-100%). Without this, sources
+scored against the full question produced near-zero relevance due to the comparison language diluting
+the semantic match.
+
+**Platform coherence in comparison handler** — the handler runs a full-question search first to infer
+which platforms the user is asking about (top 2 by vote count). Per-concept searches are then locked
+to those platforms, preventing a concept like "Create" from matching unrelated APIs on other platforms.
+
+**Threshold-filtered confidence** — lookup and planning handlers filter out sources with relevance < 0.15
+before computing mean confidence. This prevents low-scoring fallback sources from dragging down the
+overall confidence score. The comparison handler does not need this because every source comes from
+a targeted per-concept search and scores high by design.
+
+**Reranker match_query support** — reranker.rerank() accepts an optional match_query per document,
+allowing each document to be scored against a custom query string instead of the main query. Used by
+the comparison handler to score each source against its specific concept.
 
 **Lookup handler tuning** — max_output_tokens increased from 600 to 1500, and context per
 source increased from 800 to 1500 chars, for more detailed lookup answers.
@@ -497,8 +558,10 @@ a single endpoint's documentation across multiple chunks. This is critical for a
 6. ~~Expose file upload in frontend~~ — DONE (2026-03-12): Upload File tab added to Add API modal (drag-and-drop, .json and .pdf)
 7. ~~Advisory handler tone~~ — DONE (2026-03-12): system prompt rewritten for non-technical users (plain language, analogies, no conversational openers)
 8. ~~Migrate WhatsApp to official Meta OpenAPI spec~~ — DONE (2026-03-13): WhatsApp now parsed from github.com/facebook/openapi (v23.0), Gemini-enriched; expanded Meta Graph (9) + Instagram (4) curated entries
-9. **Trigger re-ingestion** — POST /admin/scrape to load new WhatsApp OpenAPI entries + expanded Meta/Instagram JSON into ChromaDB + Neo4j
-10. Add internal API wrapper entries once user finalises the details
-11. Evaluate advisory answer quality on the 50 sample questions (see Data engineer's Assistant sample questions.pdf)
-12. Evaluate graph relationship density in Neo4j — add manual edges if sparse
-13. Monitor github.com/facebook/openapi for new spec files — retire curated JSON for any platform that publishes an official spec
+9. ~~Add comparison query mode~~ — DONE (2026-03-17): dedicated ComparisonHandler with per-concept retrieval, 4-way classifier, threshold-filtered confidence in lookup/planning
+10. **Trigger re-ingestion** — POST /admin/scrape to load new WhatsApp OpenAPI entries + expanded Meta/Instagram JSON into ChromaDB + Neo4j
+11. **Frontend updates** — add comparison badge, add Advisory and Comparison mode buttons to UI, split index.html into separate HTML/CSS/JS files
+12. Add internal API wrapper entries once user finalises the details
+13. Evaluate advisory answer quality on the 50 sample questions (see Data engineer's Assistant sample questions.pdf)
+14. Evaluate graph relationship density in Neo4j — add manual edges if sparse
+15. Monitor github.com/facebook/openapi for new spec files — retire curated JSON for any platform that publishes an official spec

@@ -1,104 +1,174 @@
-# API Knowledge Base RAG — v2
+# API Knowledge Base RAG v2
 
-Hybrid RAG system for internal API documentation. Answers plain-English questions
-about what APIs do, and generates step-by-step API call plans for specific goals.
+An internal Retrieval-Augmented Generation system that lets non-technical employees ask plain-English questions about company APIs and receive accurate, actionable answers.
 
----
-
-## What's New in v2
-
-| Feature | v1 | v2 |
-|---|---|---|
-| Embeddings | ChromaDB default (all-MiniLM) | **bge-large-en-v1.5** (higher accuracy) |
-| Search | Vector only | **Hybrid: Vector + BM25** (Reciprocal Rank Fusion) |
-| Reranking | None | **Cross-encoder reranker** |
-| Graph layer | None | **Neo4j** — API relationship traversal |
-| Query routing | Single mode | **Auto-classify: Lookup vs Planning** |
-| Planning queries | Not supported | **Step-by-step API call plans with parameters** |
-| Ingestion | Manual only | **OpenAPI parser + Playwright scraper + scheduler** |
-| LLM | Gemini Flash | Flash (lookups) + **Pro (planning)** |
+Built with FastAPI, ChromaDB, Neo4j, and Google Gemini.
 
 ---
 
-## Setup
+## Overview
 
-### 1. Start Neo4j
+Non-technical team members (marketers, managers, analysts) need to understand what APIs do, how to combine them into workflows, and how to reason about data discrepancies across platforms. This system provides a single chat interface where they can ask questions in plain English and get answers grounded in actual API documentation.
+
+The system auto-classifies every question into one of four modes and routes it to a specialized handler:
+
+| Mode | Example Question | LLM | Strategy |
+| --- | --- | --- | --- |
+| **Lookup** | "What does the WhatsApp Send Message API do?" | Gemini Flash | Hybrid search + rerank |
+| **Planning** | "How do I charge a customer for their order?" | Gemini Pro | Graph traversal + hybrid search |
+| **Advisory** | "Why do Shopify numbers differ from GA4?" | Gemini Pro | KB context + general knowledge |
+| **Comparison** | "Difference between capturing and confirming a PaymentIntent?" | Gemini Flash | Per-concept retrieval + rerank |
+
+---
+
+## Features
+
+- **Four query modes** with automatic classification (advisory > comparison > planning > lookup)
+- **Hybrid search** combining vector similarity (bge-large-en-v1.5) and BM25 keyword matching via Reciprocal Rank Fusion
+- **Cross-encoder reranking** (ms-marco-MiniLM-L-6-v2) for high-precision source selection
+- **Neo4j graph traversal** for multi-hop API workflow planning
+- **12 platforms** indexed: Twilio, SendGrid, Stripe, Google Maps, WhatsApp, Meta Graph, Instagram, GA4, Meta Ads, Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase
+- **Multiple ingestion methods**: OpenAPI spec parsing, curated JSON definitions, Playwright scraping, file upload (.json, .csv, .txt, .pdf, .md), manual entry
+- **Scheduled ingestion** via APScheduler (weekly cron)
+- **Responsive frontend** with dark/light themes, mode selector, platform filters, and drag-and-drop file upload
+
+---
+
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| Backend | FastAPI 0.115.5 (Python) |
+| LLM | Google Gemini 2.5 Flash + Pro |
+| Vector DB | ChromaDB 0.5.23 (persistent, local) |
+| Embeddings | BAAI/bge-large-en-v1.5 |
+| Keyword Search | rank_bm25 (Reciprocal Rank Fusion) |
+| Reranker | cross-encoder/ms-marco-MiniLM-L-6-v2 |
+| Graph DB | Neo4j 5.26 Community (Docker) |
+| Scraper | Playwright 1.49.0 (subprocess-isolated) |
+| Scheduler | APScheduler 3.10.4 |
+| Frontend | Vanilla HTML/CSS/JS (single-page) |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Python 3.10+
+- Docker (for Neo4j)
+- A [Google AI Studio](https://aistudio.google.com) API key (Gemini)
+
+### 1. Clone and configure
+
 ```bash
+git clone <repo-url>
+cd apiRAG
 cp .env.example .env
-# Edit NEO4J_PASSWORD in .env first
+```
+
+Edit `.env` with your credentials:
+```
+GEMINI_API_KEY=your_gemini_key
+NEO4J_PASSWORD=your_neo4j_password
+```
+
+### 2. Start Neo4j
+
+```bash
 docker-compose up -d
 ```
 
-### 2. Install dependencies
+### 3. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 3. Configure environment
-```
-GEMINI_API_KEY=your_key_here
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=your_password_here
-```
+### 4. Start the server
 
-### 4. Run
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-### 5. Populate knowledge base
-Either trigger via UI (🔄 Run Scraper button) or API:
+### 5. Populate the knowledge base
+
+Use the UI (click **Run Scraper** in the sidebar) or the API:
+
+```powershell
+# PowerShell (Windows)
+Invoke-RestMethod -Uri "http://localhost:8000/admin/scrape" -Method POST -ContentType "application/json" -Body '{}'
+```
+
 ```bash
-# Scrape all platforms
+# bash / curl (Linux/macOS)
 curl -X POST http://localhost:8000/admin/scrape -H "Content-Type: application/json" -d '{}'
-
-# Scrape specific platforms only
-curl -X POST http://localhost:8000/admin/scrape -H "Content-Type: application/json" \
-  -d '{"platforms": ["Stripe", "Twilio"]}'
 ```
 
----
+### 6. Open the UI
 
-## Query Types
+Navigate to [http://localhost:8000](http://localhost:8000).
 
-### Lookup
-_"What does the WhatsApp Template Message API do?"_
-→ Fast retrieval via hybrid search + Gemini Flash → plain English answer
-
-### Planning
-_"How do I charge a customer for their order?"_
-→ Graph traversal + hybrid search + Gemini Pro → step-by-step call plan with parameters
-
-The system auto-classifies queries. You can also force a mode in the UI.
+Interactive API docs are available at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ---
 
-## Ingestion Sources
+## Project Structure
 
-| Platform | Method | Source |
-|---|---|---|
-| Twilio (Messaging, Verify, Lookup) | OpenAPI JSON | github.com/twilio/twilio-oai |
-| SendGrid | OpenAPI YAML | github.com/twilio/sendgrid-oai |
-| Stripe | OpenAPI JSON | github.com/stripe/openapi |
-| Google Maps | Manual definitions | Built-in (5 key endpoints) |
-| WhatsApp Cloud API | Playwright scraper | developers.facebook.com |
-| Meta Graph API | Playwright scraper | developers.facebook.com |
-| Instagram Graph API | Playwright scraper | developers.facebook.com |
-
----
-
-## Internal API Wrappers
-
-Use `internal_api_template.json` as a starting point. Upload via the UI or API:
-
-```bash
-curl -X POST http://localhost:8000/api/upload \
-  -F "file=@internal_api_template.json"
 ```
-
-Or add one at a time via the **+ Add API** button in the UI (check "Internal API wrapper").
+apiRAG/
+├── main.py                             # FastAPI app, all routes, lifespan startup
+├── models.py                           # APIEntry schema + request/response models
+├── requirements.txt                    # Python dependencies
+├── docker-compose.yml                  # Neo4j container
+├── .env.example                        # Environment variable template
+├── CONTRIBUTING.md                     # Contribution guidelines
+├── CHANGELOG.md                        # Version history
+├── HANDOVER.md                         # Developer handover notes
+├── internal_api_template.json          # Template for internal API wrappers
+│
+├── query/                              # Query classification and handling
+│   ├── classifier.py                   #   4-way classifier (heuristic + Gemini)
+│   ├── lookup_handler.py               #   Hybrid search -> rerank -> Gemini Flash
+│   ├── planning_handler.py             #   Graph + hybrid search -> rerank -> Gemini Pro
+│   ├── advisory_handler.py             #   Hybrid search -> rerank -> Gemini Pro
+│   └── comparison_handler.py           #   Per-concept search -> rerank -> Gemini Flash
+│
+├── retrieval/                          # Search and ranking
+│   ├── vector_store.py                 #   ChromaDB + BM25 + RRF hybrid search
+│   ├── graph_store.py                  #   Neo4j CRUD + relationship traversal
+│   └── reranker.py                     #   Cross-encoder reranking
+│
+├── ingestion/                          # Data pipeline
+│   ├── scheduler.py                    #   Pipeline orchestration + cron scheduling
+│   ├── openapi_parser.py               #   GitHub OpenAPI spec parsing
+│   ├── playwright_scraper.py           #   Headless browser scraping (non-Meta)
+│   ├── structuring.py                  #   Gemini Flash normalization to APIEntry
+│   ├── meta_api_definitions.json       #   Curated: Meta Graph (9) + Instagram (4)
+│   ├── ga4_api_definitions.json        #   Curated: GA4 Data + Admin API (9)
+│   ├── meta_ads_api_definitions.json   #   Curated: Meta Ads / Marketing API (8)
+│   ├── meta_pixel_capi_definitions.json#   Curated: Meta Pixel + CAPI (7)
+│   ├── shopify_api_definitions.json    #   Curated: Shopify Admin API (9)
+│   ├── appsflyer_api_definitions.json  #   Curated: AppsFlyer Pull API (6)
+│   └── firebase_api_definitions.json   #   Curated: Firebase Analytics (6)
+│
+├── static/                             # Frontend
+│   ├── index.html                      #   Main UI
+│   ├── style.css                       #   Styles (light/dark themes)
+│   └── app.js                          #   Client-side logic
+│
+├── chroma_db/                          # ChromaDB persistent storage (gitignored)
+│
+└── docs/                               # Extended documentation
+    ├── architecture.md                 #   System design and data flow
+    ├── query-modes.md                  #   Detailed query mode documentation
+    ├── ingestion.md                    #   How to add platforms and data
+    ├── api-reference.md                #   Full endpoint reference with schemas
+    ├── configuration.md                #   Environment variables and config
+    ├── deployment.md                   #   Production deployment guide
+    └── troubleshooting.md              #   Common issues and solutions
+```
 
 ---
 
@@ -106,43 +176,73 @@ Or add one at a time via the **+ Add API** button in the UI (check "Internal API
 
 | Method | Route | Description |
 |---|---|---|
-| `POST` | `/api/query` | Ask a question (auto-routes lookup vs planning) |
-| `GET` | `/api/apis` | List all stored APIs |
+| `POST` | `/api/query` | Ask a question (auto-routes to appropriate handler) |
+| `GET` | `/api/apis` | List all stored API entries |
 | `POST` | `/api/apis` | Add a single API manually |
-| `DELETE` | `/api/apis/{id}` | Delete an API |
-| `GET` | `/api/platforms` | List all platforms |
-| `GET` | `/api/categories` | List all categories |
-| `POST` | `/api/upload` | Bulk import from file |
+| `DELETE` | `/api/apis/{id}` | Delete an API entry |
+| `GET` | `/api/platforms` | List all platform names |
+| `GET` | `/api/categories` | List all category names |
+| `POST` | `/api/upload` | Bulk import from file (.json, .csv, .txt, .pdf, .md) |
 | `POST` | `/admin/scrape` | Trigger ingestion pipeline |
-| `GET` | `/admin/scrape/status` | Check scrape status |
+| `POST` | `/admin/scrape/url` | Scrape a single URL via Playwright |
+| `GET` | `/admin/scrape/status` | Check scrape job status |
 | `GET` | `/health` | System health check |
+| `GET` | `/docs` | Interactive Swagger UI |
 
-Interactive docs: `http://localhost:8000/docs`
+For full request/response schemas, see [docs/api-reference.md](docs/api-reference.md).
 
 ---
 
 ## Architecture
 
 ```
-Query → Classifier → Lookup Handler  → Hybrid Search → Reranker → Gemini Flash
-                  ↘ Planning Handler → Graph Traversal
-                                     + Hybrid Search → Reranker → Gemini Pro
+User Question
+      |
+      v
+  Classifier (heuristic -> Gemini Flash fallback)
+      |
+      +---> Lookup -----> Hybrid Search -> Rerank -> Gemini Flash -> Answer
+      |
+      +---> Planning ---> Graph Traversal + Hybrid Search -> Rerank -> Gemini Pro -> Step-by-step Plan
+      |
+      +---> Advisory ---> Hybrid Search -> Rerank -> Gemini Pro (expert persona) -> Advice
+      |
+      +---> Comparison -> Per-concept Search -> Per-concept Rerank -> Gemini Flash -> Side-by-side
 ```
 
 ```
-Ingestion → OpenAPI Parser (Twilio/Stripe/SendGrid/Maps)  ↘
-          → Playwright Scraper (WhatsApp/Meta/Instagram)  → Structuring (Gemini Flash)
-          → Manual Entry / File Upload                    ↗
-                                                          → ChromaDB + Neo4j
+Ingestion Sources
+      |
+      +---> OpenAPI Specs (GitHub) -------> openapi_parser -> Gemini enrichment --+
+      |                                                                           |
+      +---> Curated JSON Definitions -----> scheduler._load_json_definitions() ---+--> ChromaDB + Neo4j
+      |                                                                           |
+      +---> Playwright Scraping ----------> structuring (Gemini Flash) -----------+
+      |                                                                           |
+      +---> Manual Entry / File Upload -------------------------------------------+
 ```
+
+For a detailed architecture breakdown, see [docs/architecture.md](docs/architecture.md).
 
 ---
 
-## Scheduled Scraping
+## Documentation
 
-By default, the scraper runs every Sunday at 02:00 IST.
-Configure in `.env`:
-```
-SCRAPE_CRON_DAY=sun
-SCRAPE_CRON_HOUR=2
-```
+| Document | Description |
+| --- | --- |
+| [Architecture](docs/architecture.md) | System design, data flow, and design decisions |
+| [Query Modes](docs/query-modes.md) | How each of the four query modes works |
+| [Ingestion Guide](docs/ingestion.md) | How to add new platforms and data sources |
+| [API Reference](docs/api-reference.md) | Full endpoint documentation with request/response schemas |
+| [Configuration](docs/configuration.md) | All environment variables and configuration options |
+| [Deployment](docs/deployment.md) | Production deployment with Docker |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
+| [Contributing](CONTRIBUTING.md) | How to contribute to this project |
+| [Changelog](CHANGELOG.md) | Version history |
+| [Handover](HANDOVER.md) | Developer context and pending work |
+
+---
+
+## License
+
+Internal use only. Proprietary to the organization.
