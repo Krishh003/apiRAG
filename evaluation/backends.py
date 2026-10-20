@@ -57,11 +57,15 @@ class ProductionBackend:
             embedding_functions.SentenceTransformerEmbeddingFunction.models['BAAI/bge-large-en-v1.5'] = SentenceTransformer(
                 'BAAI/bge-large-en-v1.5', revision=revision, device='cpu')
         self.store = VectorStore(chroma_path=str(path))
-        entries = [APIEntry(**doc['entry']) for doc in docs]
-        self.store._collection.add(ids=[doc['id'] for doc in docs],
-                                   documents=[_entry_to_document(entry) for entry in entries],
-                                   metadatas=[_entry_to_metadata(entry) for entry in entries])
-        self.store._rebuild_bm25()
+        try:
+            entries = [APIEntry(**doc['entry']) for doc in docs]
+            self.store._collection.add(ids=[doc['id'] for doc in docs],
+                                       documents=[_entry_to_document(entry) for entry in entries],
+                                       metadatas=[_entry_to_metadata(entry) for entry in entries])
+            self.store._rebuild_bm25()
+        except (ValueError, RuntimeError, OSError):
+            self.close()
+            raise
         self.reranker = None
 
     def close(self):

@@ -10,6 +10,22 @@ from evaluation.dataset import load_dataset
 
 
 class ProductionParityTests(unittest.TestCase):
+    def test_population_failure_releases_chroma_before_reraising(self):
+        import numpy as np
+        from chromadb.utils import embedding_functions
+
+        class FixedEmbeddings:
+            def encode(self, documents, **kwargs):
+                return np.asarray([[1., .5, .25] for _ in documents])
+
+        docs, _ = load_dataset()
+        cache = embedding_functions.SentenceTransformerEmbeddingFunction.models
+        with patch.dict(cache, {'BAAI/bge-large-en-v1.5': FixedEmbeddings()}), patch('retrieval.vector_store.VectorStore._rebuild_bm25', side_effect=[None, RuntimeError('population failed')]):
+            with tempfile.TemporaryDirectory(prefix='apirag-failure-cleanup-') as directory:
+                with self.assertRaisesRegex(RuntimeError, 'population failed'):
+                    ProductionBackend(docs, directory)
+            self.assertFalse(Path(directory).exists())
+
     def test_real_chroma_index_can_be_removed_after_search(self):
         import numpy as np
         from chromadb.utils import embedding_functions
