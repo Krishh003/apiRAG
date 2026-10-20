@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import tempfile
 from pathlib import Path
 
 DATA = Path(__file__).parent / 'data'
@@ -16,9 +17,18 @@ def read_jsonl(path):
 
 
 def write_jsonl(path, rows):
-    with Path(path).open('w', encoding='utf-8', newline='\n') as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=True, allow_nan=False) + '\n')
+    path = Path(path)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', newline='\n',
+                                         dir=path.parent, suffix='.tmp', delete=False) as handle:
+            temporary = Path(handle.name)
+            for row in rows:
+                handle.write(json.dumps(row, ensure_ascii=True, allow_nan=False) + '\n')
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def validate(docs, questions):

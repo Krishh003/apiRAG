@@ -1,10 +1,22 @@
 import copy
+import tempfile
 import unittest
+from pathlib import Path
 
-from evaluation.dataset import load_dataset, validate
+from evaluation.dataset import load_dataset, read_jsonl, validate, write_jsonl
 
 
 class DatasetTests(unittest.TestCase):
+    def test_failed_checkpoint_preserves_previous_predictions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'predictions.jsonl'
+            original = [{'id': 'saved'}]
+            write_jsonl(path, original)
+            with self.assertRaises(ValueError):
+                write_jsonl(path, [{'id': 'new'}, {'score': float('nan')}])
+            self.assertEqual(read_jsonl(path), original)
+            self.assertEqual(list(Path(directory).iterdir()), [path])
+
     def setUp(self):
         self.docs, self.questions = load_dataset()
 
