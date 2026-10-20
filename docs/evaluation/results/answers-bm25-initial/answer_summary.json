@@ -1,0 +1,74 @@
+{
+  "review": {
+    "total": 12,
+    "reviewed": 0,
+    "pending": 12,
+    "judge": "human; subjective rubric, not objective ground truth",
+    "factual_correctness": null,
+    "grounding": null,
+    "unsupported_claim_rate": null,
+    "missing_information_abstention": null,
+    "abstention_n": 0
+  },
+  "environment": {
+    "python": "3.10.11",
+    "os": "Windows-10-10.0.26200-SP0",
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+    "logical_cpus": 20,
+    "packages": {
+      "numpy": "2.2.6",
+      "torch": "2.5.1",
+      "sentence-transformers": "2.7.0",
+      "transformers": "4.46.3",
+      "tokenizers": "0.20.3",
+      "chromadb": "0.5.23",
+      "rank_bm25": "0.2.2",
+      "neo4j": "5.27.0",
+      "google-generativeai": "0.8.3",
+      "matplotlib": "3.10.7"
+    },
+    "source_sha256": {
+      "retrieval/vector_store.py": "e385f1983fe8ed21f4d48ef7d2e5c0c487af8826c20e0e47505c5f32bf5ae927",
+      "retrieval/reranker.py": "6836afd4bf1ffe9b441a8fd1af987d652896bbf0942e1a13f4f18569c7e24c22",
+      "retrieval/graph_store.py": "6bf954148aaf905ff72e237a545ddc8f3ad9ac79d9388912643dfb198c94736f",
+      "models.py": "4b86f02f31c119a9912f5a65bfe84e1a6af014ea60c691520538183595563e38"
+    },
+    "ram_bytes": null,
+    "git_head": "ac38c2ab9ca091eb2f7478866325522e40e52a52"
+  },
+  "sha256": {
+    "corpus.jsonl": "e15608cb3cb8fa6841648bcf08e7b8087d4532f0ba31a32ccdac7deeeb34b78f",
+    "questions.jsonl": "194bfb56cb751e4b8222e98de46814a6bb6fb6dba405949f7aa543a80370ed32"
+  },
+  "selection": [
+    "q001",
+    "q051",
+    "q075",
+    "q063",
+    "q002",
+    "q052",
+    "q076",
+    "q064",
+    "q085",
+    "q091",
+    "q096",
+    "q086"
+  ],
+  "prices": {},
+  "llm_judge": null,
+  "retrieval_config": "bm25",
+  "model_latency": {
+    "n": 20,
+    "p50_ms": 1061.68245,
+    "p95_ms": 3707.0586950000034
+  },
+  "handler_latency": {
+    "n": 12,
+    "p50_ms": 1661.72405,
+    "p95_ms": 7487.394184999997
+  },
+  "handler_failures": 10,
+  "model_call_failures": 14,
+  "graph": "incomplete; graph disabled for this answer run",
+  "cost_caveat": "User-supplied rates; input/output only, excludes unreported thinking/cache/billing adjustments."
+}

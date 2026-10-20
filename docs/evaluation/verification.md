@@ -26,3 +26,19 @@ No learned inference, graph service, Gemini generation, human answer adjudicatio
 HTTP application load test or live UI regression test passed in this session;
 these remain unrun/incomplete. The reviewer inspected code and documentation,
 not service-backed behavior.
+
+## Continuation
+
+- 31 unit/integration tests passed after adding the lexical answer control,
+  per-model pacing and quota suppression, actual-answer review validation, and
+  isolated HTTP route tests.
+- Two bounded 12-question Gemini diagnostics ran; the paced run produced seven
+  answer texts and five application failures. These are not correctness scores.
+- Four concurrent loopback requests reached the real query route, all returning
+  handled quota failures; healthy HTTP performance is not established.
+- Synthetic answer/prompt/call evidence was checked for credential patterns before
+  copying to `results/`. No key or `.env` content is included.
+- Reviewer findings led to an explicit process-key check before importing the
+  HTTP route, suppression of its automatic dotenv loading, expanded source hashes
+  and generation-setting records for future runs. Earlier service manifests remain
+  explicitly limited; they were not retroactively relabeled as complete.

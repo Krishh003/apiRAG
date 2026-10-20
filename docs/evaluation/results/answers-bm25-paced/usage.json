@@ -1,0 +1,7 @@
+{
+  "input_tokens": 5405,
+  "output_tokens": 515,
+  "total_tokens": 8908,
+  "response_usage_samples": 14,
+  "note": "Provider-reported totals; input plus visible output may not equal total. No cost estimate or hidden-token attribution."
+}

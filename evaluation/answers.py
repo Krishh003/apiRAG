@@ -1,12 +1,13 @@
 """Optional bounded Gemini runs through existing handlers; human review only."""
 
 import argparse
+import hashlib
 import os
 import tempfile
 import time
 from pathlib import Path
 
-from evaluation.backends import ProductionBackend, timed
+from evaluation.backends import BM25Backend, ProductionBackend, document_text, timed
 from evaluation.dataset import fingerprints, load_dataset, read_jsonl, write_jsonl
 from evaluation.metrics import latency_summary
 from evaluation.run import environment, save_json
@@ -21,6 +22,8 @@ def validate_reviews(rows):
         review = row.get('review', {})
         if not review:
             continue
+        if not isinstance(row.get('answer'), str) or not row['answer'].strip():
+            raise ValueError('Completed reviews require an actual answer')
         for field in ('factual_correctness', 'grounding'):
             if type(review.get(field)) is not int or review[field] not in (0, 1, 2):
                 raise ValueError('Review scores must be integers from 0 to 2')
@@ -56,18 +59,51 @@ def review_rows(predictions, docs, questions, config='reranked'):
              'answer': None, 'review': {}} for q in questions]
 
 
+class CallBudget:
+    """Pace actual requests per model; do not retry quota failures in this run."""
+
+    def __init__(self, interval_seconds=13):
+        if not 0 <= interval_seconds <= 60:
+            raise ValueError('API interval must be between 0 and 60 seconds')
+        self.interval = interval_seconds
+        self.last_call = {}
+        self.blocked = set()
+
+    def before_call(self, model):
+        if model in self.blocked:
+            raise RuntimeError('Model quota unavailable; further requests suppressed')
+        now = time.monotonic()
+        wait = max(0, self.last_call.get(model, now - self.interval) + self.interval - now)
+        if wait:
+            time.sleep(wait)
+        self.last_call[model] = now + wait
+        return wait * 1000
+
+
 class TimedModel:
-    def __init__(self, model, label, calls, prices):
+    def __init__(self, model, label, calls, prices, budget=None):
         self.model, self.label, self.calls, self.prices = model, label, calls, prices
+        self.budget = budget or CallBudget()
 
     def generate_content(self, prompt):
-        from google.api_core.exceptions import GoogleAPICallError, RetryError
+        from google.api_core.exceptions import GoogleAPICallError, ResourceExhausted, RetryError
 
         start = time.perf_counter_ns()
         record = {'model': self.label, 'prompt': prompt, 'error': None,
+                  'api_request_sent': False, 'throttle_wait_ms': 0,
                   'input_tokens': None, 'output_tokens': None, 'total_tokens': None, 'estimated_usd': None}
+        record['generation_config'] = dict(getattr(self.model, '_generation_config', {}))
+        record['system_instruction_sha256'] = hashlib.sha256(
+            str(getattr(self.model, '_system_instruction', '')).encode()).hexdigest()
         try:
-            response = self.model.generate_content(prompt, request_options={'timeout': 60})
+            record['throttle_wait_ms'] = self.budget.before_call(self.label)
+            start = time.perf_counter_ns()
+            record['api_request_sent'] = True
+            response = self.model.generate_content(prompt, request_options={'timeout': 60, 'retry': None})
+            record['returned_model_version'] = getattr(response, 'model_version', None)
+            candidates = getattr(response, 'candidates', [])
+            record['finish_reasons'] = [int(c.finish_reason) for c in candidates]
+            record['has_text'] = any(part.text for candidate in candidates for part in candidate.content.parts)
             usage = getattr(response, 'usage_metadata', None)
             if usage:
                 record.update(input_tokens=usage.prompt_token_count,
@@ -80,6 +116,8 @@ class TimedModel:
             return response
         except (GoogleAPICallError, RetryError, OSError, RuntimeError, ValueError) as exc:
             record['error'] = type(exc).__name__
+            if isinstance(exc, ResourceExhausted):
+                self.budget.blocked.add(self.label)
             raise
         finally:
             record['ms'] = (time.perf_counter_ns() - start) / 1_000_000
@@ -91,17 +129,65 @@ class NoGraph:
         return []
 
 
-def generate(output, limit=12, prices=None):
-    if not 1 <= limit <= 20:
-        raise ValueError('Optional generation limited to 1..20 sequential questions')
-    key = os.environ.get('GEMINI_API_KEY')
-    if not key:
-        raise ValueError('Set GEMINI_API_KEY in the process environment; .env is not loaded')
+class BM25AnswerBackend:
+    """Explicit lexical answer control; no dense retrieval or learned reranker."""
+
+    def __init__(self, docs):
+        self.lexical = BM25Backend(docs)
+        self.docs = {doc['id']: doc for doc in docs}
+        self.store = self
+        self.reranker = self
+
+    def count(self):
+        return len(self.docs)
+
+    def hybrid_search(self, query, top_k=6, platform_filter=None, category_filter=None):
+        results = []
+        for match in self.lexical.search(query, depth=self.count()):
+            doc = self.docs[match['id']]
+            entry = doc['entry']
+            if platform_filter and entry['platform'] != platform_filter:
+                continue
+            if category_filter and entry['category'] != category_filter:
+                continue
+            results.append({'id': doc['id'], 'document': document_text(entry),
+                            'metadata': entry, 'bm25_score': match['score']})
+        return results[:top_k]
+
+    def rerank(self, query, results, top_k=4):
+        return results[:top_k]
+
+
+def build_components(backend, key, calls, prices=None, api_interval_seconds=13):
     from query.advisory_handler import AdvisoryHandler
     from query.classifier import QueryClassifier
     from query.comparison_handler import ComparisonHandler
     from query.lookup_handler import LookupHandler
     from query.planning_handler import PlanningHandler
+
+    classifier = QueryClassifier(key)
+    budget = CallBudget(api_interval_seconds)
+    handlers = dict(lookup=LookupHandler(backend.store, backend.reranker, key),
+                    planning=PlanningHandler(backend.store, NoGraph(), backend.reranker, key),
+                    advisory=AdvisoryHandler(backend.store, backend.reranker, key),
+                    comparison=ComparisonHandler(backend.store, backend.reranker, key))
+    for handler in [classifier, *handlers.values()]:
+        for attr in ('_model', '_flash'):
+            model = getattr(handler, attr, None)
+            if model:
+                label = 'gemini-2.5-pro' if isinstance(handler, (PlanningHandler, AdvisoryHandler)) and attr == '_model' else 'gemini-2.5-flash'
+                setattr(handler, attr, TimedModel(model, label, calls, prices or {}, budget))
+    return classifier, handlers
+
+
+def generate(output, limit=12, prices=None, retrieval='production', api_interval_seconds=13):
+    if not 1 <= limit <= 20:
+        raise ValueError('Optional generation limited to 1..20 sequential questions')
+    key = os.environ.get('GEMINI_API_KEY')
+    if not key:
+        raise ValueError('Set GEMINI_API_KEY in the process environment; .env is not loaded')
+    if retrieval not in ('production', 'bm25'):
+        raise ValueError('Choose production or bm25 retrieval')
 
     docs, questions = load_dataset()
     output = Path(output)
@@ -118,19 +204,10 @@ def generate(output, limit=12, prices=None):
     selected = selected[:limit]
     calls, rows = [], []
     with tempfile.TemporaryDirectory(prefix='apirag-answer-evaluation-') as temporary:
-        backend = ProductionBackend(docs, temporary)
-        backend.load_reranker()
-        classifier = QueryClassifier(key)
-        handlers = dict(lookup=LookupHandler(backend.store, backend.reranker, key),
-                        planning=PlanningHandler(backend.store, NoGraph(), backend.reranker, key),
-                        advisory=AdvisoryHandler(backend.store, backend.reranker, key),
-                        comparison=ComparisonHandler(backend.store, backend.reranker, key))
-        for handler in [classifier, *handlers.values()]:
-            for attr in ('_model', '_flash'):
-                model = getattr(handler, attr, None)
-                if model:
-                    label = 'gemini-2.5-pro' if isinstance(handler, (PlanningHandler, AdvisoryHandler)) and attr == '_model' else 'gemini-2.5-flash'
-                    setattr(handler, attr, TimedModel(model, label, calls, prices or {}))
+        backend = BM25AnswerBackend(docs) if retrieval == 'bm25' else ProductionBackend(docs, temporary)
+        if retrieval == 'production':
+            backend.load_reranker()
+        classifier, handlers = build_components(backend, key, calls, prices, api_interval_seconds)
         for q in selected:
             before = len(calls)
             start = time.perf_counter_ns()
@@ -141,19 +218,26 @@ def generate(output, limit=12, prices=None):
                        classification_method=method, answer=response.answer, sources=response.sources,
                        reference_answer=q['reference_answer'], required_facts=q['required_facts'],
                        expected_source_ids=q['expected_source_ids'], review={},
+                       retrieval_config=retrieval,
                        error='application_failure' if 'ran into an error' in response.answer.lower() else None,
                        handler_ms=(time.perf_counter_ns() - start) / 1_000_000,
                        calls=calls[before:], graph='disabled; dedicated graph experiment incomplete')
             rows.append(row)
             write_jsonl(output / 'answers.jsonl', rows)
+            print(f"Generated {q['id']} via {mode} ({retrieval})", flush=True)
             time.sleep(1)  # Bound outbound model API pressure.
     save_json(output / 'answer_summary.json', {
         'review': review_summary(rows), 'environment': environment(), 'sha256': fingerprints(),
         'selection': [q['id'] for q in selected], 'prices': prices or {}, 'llm_judge': None,
-        'model_latency': latency_summary([call['ms'] for call in calls]),
+        'retrieval_config': retrieval,
+        'api_interval_seconds': api_interval_seconds,
+        'model_latency': latency_summary([call['ms'] for call in calls if call['api_request_sent']]),
         'handler_latency': latency_summary([row['handler_ms'] for row in rows]),
         'handler_failures': sum(bool(row['error']) for row in rows),
         'model_call_failures': sum(bool(call['error']) for call in calls),
+        'api_requests_sent': sum(call['api_request_sent'] for call in calls),
+        'quota_suppressed_calls': sum(not call['api_request_sent'] for call in calls),
+        'empty_model_responses': sum(call.get('has_text') is False for call in calls),
         'graph': 'incomplete; graph disabled for this answer run',
         'cost_caveat': 'User-supplied rates; input/output only, excludes unreported thinking/cache/billing adjustments.'})
 
@@ -171,6 +255,9 @@ def main():
     gen = sub.add_parser('generate')
     gen.add_argument('--output', type=Path, required=True)
     gen.add_argument('--limit', type=int, default=12)
+    gen.add_argument('--retrieval', choices=['production', 'bm25'], default='production')
+    gen.add_argument('--api-interval-seconds', type=float, default=13)
+    gen.add_argument('--env-file', type=Path, help='Explicitly load credentials into this process only')
     gen.add_argument('--prices', type=Path, help='JSON model rates with input_per_million and output_per_million, date and source')
     args = parser.parse_args()
     if args.command == 'prepare':
@@ -182,7 +269,11 @@ def main():
     else:
         import json
 
-        generate(args.output, args.limit, json.loads(args.prices.read_text()) if args.prices else None)
+        if args.env_file:
+            from dotenv import load_dotenv
+
+            load_dotenv(args.env_file)
+        generate(args.output, args.limit, json.loads(args.prices.read_text()) if args.prices else None, args.retrieval, args.api_interval_seconds)
 
 
 if __name__ == '__main__':

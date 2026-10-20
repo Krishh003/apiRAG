@@ -1,0 +1,4 @@
+{"request": 0, "query_id": "q001", "ms": 1876.9924, "error": "application_failure", "query_type": "lookup"}
+{"request": 1, "query_id": "q002", "ms": 1874.2811, "error": "application_failure", "query_type": "planning"}
+{"request": 2, "query_id": "q003", "ms": 10.4165, "error": "application_failure", "query_type": "lookup"}
+{"request": 3, "query_id": "q004", "ms": 28.917, "error": "application_failure", "query_type": "planning"}

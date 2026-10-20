@@ -29,9 +29,12 @@ def environment():
         except importlib.metadata.PackageNotFoundError:
             packages[name] = None
     root = Path(__file__).resolve().parents[1]
-    source_hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
-                     for name in ('retrieval/vector_store.py', 'retrieval/reranker.py',
-                                  'retrieval/graph_store.py', 'models.py')}
+    source_names = ['retrieval/vector_store.py', 'retrieval/reranker.py',
+                    'retrieval/graph_store.py', 'models.py', 'main.py']
+    source_names += [p.relative_to(root).as_posix() for p in sorted((root / 'query').glob('*.py'))]
+    source_names += ['evaluation/' + name + '.py' for name in
+                     ('answers', 'server', 'run', 'backends', 'dataset', 'metrics', 'performance')]
+    source_hashes = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in source_names}
     info = {'python': platform.python_version(), 'os': platform.platform(),
             'cpu': platform.processor(), 'logical_cpus': os.cpu_count(), 'packages': packages}
     info['source_sha256'] = source_hashes

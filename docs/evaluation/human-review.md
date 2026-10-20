@@ -1,7 +1,7 @@
 # Answer review protocol
 
-No LLM judge is used. Generation and human review are optional, incomplete until
-actual answers and named reviewer annotations exist. Empty reviews are pending,
+No LLM judge is used. A [BM25 service diagnostic](answer-results.md) includes actual
+answers, but human review remains incomplete. Empty reviews are pending,
 never zero scores or successful answers. Agent-authored labels are not human
 adjudication. Keep completed answer runs under ignored `evaluation/private/`
 until inspected for secrets.
@@ -18,6 +18,20 @@ environment using your secret manager, then:
 ```powershell
 python -m evaluation.answers generate --limit 12 --output evaluation/private/answers-01
 ```
+
+To explicitly use a local credential file and the lexical control without weights:
+
+```powershell
+python -m evaluation.answers generate --env-file .env --retrieval bm25 --limit 12 --api-interval-seconds 15 --output evaluation/private/answers-bm25-next
+```
+
+This control bypasses dense search and learned reranking only inside the evaluator.
+Per-model request pacing is outside API latency timers. After a quota error,
+further calls to that model are suppressed for the run and recorded separately.
+Do not confuse these skipped calls with outbound model requests. The current
+configured Pro quota is zero and the Flash daily allowance was exhausted; restore
+quota before repeating service experiments. A completed review requires an actual
+nonempty answer, so an unanswered retrieval packet cannot receive quality scores.
 
 This selects two queries per mode followed by ambiguous, absent and adversarial cases. It calls
 the existing classifier and four handlers sequentially, with a fresh synthetic

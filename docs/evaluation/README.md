@@ -16,10 +16,13 @@ Dense, dense+BM25/RRF, and cross-encoder reranking were **attempted but remain
 incomplete**: BGE weights were not cached, and model downloads were not completed.
 The saved run deliberately enables offline mode so missing weights fail quickly.
 No architectural improvement over dense retrieval can be inferred from BM25
-alone. Graph traversal, Gemini answers, human quality review, HTTP end-to-end,
-model API latency, token usage and cost also remain **incomplete**, with no
-scores or invented estimates. Optional runners exist but have not been service
-validated. The small BM25 concurrency experiment tests local retrieval only.
+alone. A [BM25 Gemini baseline and HTTP diagnostic](answer-results.md) have now
+run: seven answer texts from 12 questions, with five application failures under
+provider quotas. Model API timing and token usage are recorded; human quality
+scores and costs remain unreported. Four HTTP requests all reached handled quota
+failures, so healthy-service HTTP performance remains incomplete. Graph traversal
+also remains incomplete. The small offline BM25 concurrency experiment tests
+local retrieval only.
 
 ## Setup
 
@@ -171,9 +174,12 @@ app (maximum 12 requests/2 workers; no redirect or proxy forwarding):
 python -m evaluation.performance http --isolated-synthetic-server --url http://127.0.0.1:8000 --requests 8 --workers 2 --output evaluation/private/http-01
 ```
 
-Record app/server/model configuration, index hashes and warm/cold state alongside
-that run. This command may incur Gemini calls from the app. Do not point it at
-an internal customer-data instance. The current HTTP experiment is unrun.
+Use `python -m evaluation.server --env-file .env --retrieval bm25 --output evaluation/private/http-server-next`
+to start a loopback-only server using the actual query route and the synthetic
+fixture, with no production startup or ingestion. Record app/server/model
+configuration, index hashes and warm/cold state alongside the run. This command
+may incur Gemini calls. The recorded HTTP run is a quota-failure diagnostic;
+healthy-service performance remains incomplete.
 
 Optional graph experiment requires `EVAL_NEO4J_URI`, `EVAL_NEO4J_USER`, and
 `EVAL_NEO4J_PASSWORD` in the process environment for a disposable empty instance:
@@ -202,7 +208,7 @@ forms and six fictional platforms. It is not a production quality estimate.
 Source recall is not factual correctness, abstention, workflow ordering or
 unsupported-claim detection. Independent annotation and answer review remain
 pending; no human agreement statistic is claimed. General advisory knowledge
-must be distinguished from KB grounding. Model download, Neo4j and Gemini
+must be distinguished from KB grounding. Model download, Neo4j and full Gemini
 experiments remain incomplete as listed above.
 
 No production source/UI files changed. Unit/integration tests cover metrics,
@@ -211,7 +217,9 @@ failure evidence, review validation and loopback load-test restrictions.
 Service-backed execution and live UI regressions were not tested.
 
 Review of new files found only synthetic API contracts, evaluation code and
-machine/package metadata. `.env` is ignored and was not read. Existing PDFs,
+machine/package metadata. `.env` is ignored; the offline run did not read it.
+The service diagnostics loaded its key into process memory without displaying
+or saving it. Existing PDFs,
 internal templates, user-staged changes and live Chroma data are excluded.
 The owner confirmed that the previous proprietary/internal-use notice was
 incorrect and authorized publication of the benchmark changes. That notice has

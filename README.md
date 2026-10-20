@@ -254,8 +254,10 @@ metrics. [Saved predictions, tables, confidence intervals and plots](docs/evalua
 support these numbers; they do not measure generated-answer correctness.
 
 Dense, hybrid/RRF and cross-encoder experiments remain **incomplete** because model
-weights were unavailable locally. Graph, generation, human answer review and HTTP
-end-to-end experiments are also incomplete. No architectural quality improvement
+weights were unavailable locally. A [BM25 Gemini diagnostic](docs/evaluation/answer-results.md)
+produced seven answer texts from 12 questions; five hit quota-related application
+failures. Human quality review, graph and healthy-service HTTP performance remain
+incomplete. No architectural quality improvement
 over a dense baseline has been established. Existing architecture descriptions
 are implementation descriptions, not evidence of measured superiority.
 
