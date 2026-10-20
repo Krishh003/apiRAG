@@ -90,10 +90,10 @@ does not read `.env`, ingest existing customer data, or start the production app
 ## Permissions and provenance
 
 GitHub metadata checked 2026-10-20: repository `Krishh003/apiRAG` is **public**;
-connected account has admin/push permission. README license says **internal use
-only, proprietary**. Git permission does not prove company publication consent.
-Prepare a scoped local commit; no remote publication until that discrepancy is
-resolved. Original synthetic documentation under `evaluation/data/` is the only
+connected account has admin/push permission. The owner clarified that the previous
+proprietary/internal-use notice was added in error and should be removed;
+publication of the benchmark changes is authorized. Original synthetic
+documentation under `evaluation/data/` is the only
 benchmark corpus. Do not copy existing internal templates, PDFs or live stores.
 Existing staged retrieval/UI/config/embedding-evaluation work belongs to the user
 and must stay outside the benchmark commit.

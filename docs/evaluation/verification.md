@@ -25,4 +25,4 @@ class-based configuration. Production files were preserved.
 No learned inference, graph service, Gemini generation, human answer adjudication,
 HTTP application load test or live UI regression test passed in this session;
 these remain unrun/incomplete. The reviewer inspected code and documentation,
-not service-backed behavior. No remote push or publication was performed.
+not service-backed behavior.

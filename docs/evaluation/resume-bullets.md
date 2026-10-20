@@ -14,5 +14,3 @@ question, not the three repeats; say "three passes" rather than "261 independent
 questions." These bullets describe a synthetic benchmark, not customer impact.
 Do not claim improved hybrid retrieval, reranking accuracy, graph planning,
 production throughput or reduced model cost until those experiments run.
-Use externally only after resolving the repository's proprietary/public
-publication discrepancy described in [the audit](audit.md).

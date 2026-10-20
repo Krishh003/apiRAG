@@ -4,7 +4,7 @@ No LLM judge is used. Generation and human review are optional, incomplete until
 actual answers and named reviewer annotations exist. Empty reviews are pending,
 never zero scores or successful answers. Agent-authored labels are not human
 adjudication. Keep completed answer runs under ignored `evaluation/private/`
-until inspected for secrets and publication approval.
+until inspected for secrets.
 
 Generate a review packet from saved retrieval predictions (answers initially null):
 

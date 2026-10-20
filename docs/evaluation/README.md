@@ -213,6 +213,6 @@ Service-backed execution and live UI regressions were not tested.
 Review of new files found only synthetic API contracts, evaluation code and
 machine/package metadata. `.env` is ignored and was not read. Existing PDFs,
 internal templates, user-staged changes and live Chroma data are excluded.
-Repository visibility is public but the existing license is proprietary/internal;
-changes are prepared as a scoped **local commit**, with no push. Company
-publication authorization must be resolved before publishing additional material.
+The owner confirmed that the previous proprietary/internal-use notice was
+incorrect and authorized publication of the benchmark changes. That notice has
+been removed. The benchmark commit excludes the user's pre-existing staged work.

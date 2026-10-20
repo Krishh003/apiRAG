@@ -267,11 +267,5 @@ python -m evaluation.run --score-only docs/evaluation/results/offline/prediction
 ```
 
 See the report for full dependency setup, tests, learned-control commands,
-performance controls, limitations and publication/provenance review. Production
+performance controls, limitations and provenance review. Production
 code and UI are unchanged by the evaluation suite.
-
----
-
-## License
-
-Internal use only. Proprietary to the organization.
