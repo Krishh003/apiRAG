@@ -7,22 +7,34 @@ knowledge base. Start with the [audit](audit.md), [generated results](results.md
 
 ## Verified versus incomplete
 
-The checked-in run in `results/offline/` executes 100 questions on 25 synthetic
-endpoint documents three times. BM25 metrics cover the 87 answerable questions.
+The completed run in `results/learned-03/` executes all four controls on 100
+questions and 25 synthetic endpoint documents three times: 1,200 predictions,
+zero retrieval errors. Ranking metrics cover the 87 answerable questions.
 Thirteen ambiguous/absent/adversarial requests have no relevant documents and
 are excluded from ranking aggregates, not counted as perfect answers.
 
-Dense, dense+BM25/RRF, and cross-encoder reranking were **attempted but remain
-incomplete**: BGE weights were not cached, and model downloads were not completed.
-The saved run deliberately enables offline mode so missing weights fail quickly.
-No architectural improvement over dense retrieval can be inferred from BM25
-alone. A [BM25 Gemini baseline and HTTP diagnostic](answer-results.md) have now
+Dense MRR@10 was 0.9713, BM25 0.7541, hybrid/RRF 0.8860 and reranked hybrid
+0.9636. Hybrid minus dense MRR was -0.0852 (paired 95% CI -0.1360 to -0.0393);
+reranked minus hybrid was +0.0776 (CI +0.0268 to +0.1312). Thus this fixture
+supports a reranking gain over hybrid, but does not support adding BM25/RRF to
+improve the dense baseline. Dense, hybrid and reranked Recall@5 all saturate at
+1.0. These are authored synthetic labels, not production quality estimates.
+All four aggregate metric values were identical across the three passes.
+
+Earlier attempts remain inspectable: `results/offline/` had no cached weights;
+`results/learned/` hit an incompatible system Torchvision import;
+`results/learned-02/` was interrupted while writing a checkpoint after 772 saved
+predictions. They are excluded from the completed run's aggregates. Model weights
+were downloaded and checksum-verified before running `learned-03` offline.
+
+A [BM25 Gemini baseline and HTTP diagnostic](answer-results.md) have now
 run: seven answer texts from 12 questions, with five application failures under
 provider quotas. Model API timing and token usage are recorded; human quality
 scores and costs remain unreported. Four HTTP requests all reached handled quota
 failures, so healthy-service HTTP performance remains incomplete. Graph traversal
 also remains incomplete. The small offline BM25 concurrency experiment tests
-local retrieval only.
+local retrieval only. The completed learned run also tested 12 hybrid requests
+with two workers: zero observed failures, p50 230.491 ms and p95 368.915 ms.
 
 ## Setup
 
@@ -42,16 +54,23 @@ libraries through system Python:
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path '.venv/Lib/site-packages').Path
+$env:HF_HOME = Join-Path (Get-Location).Path 'evaluation/cache/huggingface'
 $env:PYTHONHASHSEED = '0'
 $env:HF_HUB_OFFLINE = '1'
 $env:TRANSFORMERS_OFFLINE = '1'
-python -m evaluation.run --output evaluation/runs/offline-reproduction --repeats 3
+python -S -m evaluation.run --output evaluation/runs/offline-reproduction --repeats 3
 ```
 
 This workaround is local to the shell. It does not repair or mutate the app
 environment. Actual package versions and source SHA256 hashes are recorded in
-`results/offline/environment.json`; do not assume that a base Git SHA alone
+`results/learned-03/environment.json`; do not assume that a base Git SHA alone
 captures the user's pre-existing staged retrieval modifications.
+
+The local learned run uses `python -S` to exclude system site packages while
+retaining the explicit project `PYTHONPATH`. Without this isolation, the system's
+Torchvision conflicts with the project's CPU PyTorch (`torchvision::nms` missing).
+The failed attempt is retained in `results/learned/`. A fresh, consistently
+installed virtual environment should use its own interpreter normally.
 
 For BM25 and standard-library harness tests, weights and credentials are unnecessary:
 
@@ -100,12 +119,12 @@ tokenizer vocabulary hashes when models load. To reproduce a completed learned
 run, use the revisions from that manifest:
 
 ```powershell
-$env:EVAL_EMBEDDING_REVISION = 'EMBEDDING_COMMIT_FROM_MANIFEST'
-$env:EVAL_RERANKER_REVISION = 'RERANKER_COMMIT_FROM_MANIFEST'
+$env:EVAL_EMBEDDING_REVISION = 'd4aa6901d3a41ba39fb536a557fa166f842b0e09'
+$env:EVAL_RERANKER_REVISION = '233902d25c440f23af6f7d6e94d2946bac0bee0a'
 python -m evaluation.run --output evaluation/runs/learned-pinned --repeats 3
 ```
 
-No model manifest is claimed for the current missing-weight run. Package pins
+No loaded model manifest is claimed for failed setup runs. Package pins
 alone do not freeze remote weights. Existing production tie ordering may still
 vary with Chroma/platform versions; retain predictions for every run.
 
@@ -126,12 +145,13 @@ Repeated requests are not pooled to inflate query-bootstrap sample size.
 - CIs: 2000 percentile bootstrap resamples of queries, seed 20261020. Compare
   treatments using paired per-query differences with explicit dense or hybrid
   baselines. These intervals do not capture annotation bias or production drift.
+  Intervals are exploratory and are not adjusted for multiple comparisons.
 
 Recompute scores without loading models or calling an API:
 
 ```powershell
-python -m evaluation.run --score-only docs/evaluation/results/offline/predictions.jsonl --output evaluation/runs/rescore
-python -m evaluation.report --run docs/evaluation/results/offline --output docs/evaluation
+python -m evaluation.run --score-only docs/evaluation/results/learned-03/predictions.jsonl --output evaluation/runs/rescore
+python -m evaluation.report --run docs/evaluation/results/learned-03 --output docs/evaluation
 python -m evaluation.answers prepare --predictions docs/evaluation/results/offline/predictions.jsonl --config bm25 --output evaluation/private/review.jsonl
 ```
 
@@ -150,6 +170,9 @@ it is not additional end-to-end work and excludes sorting/fetching.
 `reranker_only` measures rescoring/reordering, excluding retrieval. Latency
 aggregates include attempted measured requests, including failed attempts;
 setup/warmup failures remain errors rather than latency samples.
+"Cold setup" means a new Python process and temporary index with weights already
+on disk. The OS page cache was not flushed; a model-loading diagnostic preceded
+the learned run. It is not a clean-boot or cold-download measurement.
 
 Queries are shuffled deterministically per repeat. Run order is BM25, dense,
 hybrid, reranked for each query; CPU/cache carryover and OS background load can
@@ -208,13 +231,14 @@ forms and six fictional platforms. It is not a production quality estimate.
 Source recall is not factual correctness, abstention, workflow ordering or
 unsupported-claim detection. Independent annotation and answer review remain
 pending; no human agreement statistic is claimed. General advisory knowledge
-must be distinguished from KB grounding. Model download, Neo4j and full Gemini
+must be distinguished from KB grounding. Neo4j and full Gemini
 experiments remain incomplete as listed above.
 
 No production source/UI files changed. Unit/integration tests cover metrics,
 qrel integrity, serializer/BM25 parity, reranker truncation, empty/OOV queries,
 failure evidence, review validation and loopback load-test restrictions.
-Service-backed execution and live UI regressions were not tested.
+Live UI regressions were not tested. Service-backed diagnostics are limited to
+the Gemini/HTTP evidence described above.
 
 Review of new files found only synthetic API contracts, evaluation code and
 machine/package metadata. `.env` is ignored; the offline run did not read it.

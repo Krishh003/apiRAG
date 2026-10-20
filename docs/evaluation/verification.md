@@ -22,10 +22,10 @@ first-inference and request failures, review validation and loopback-only target
 Known existing warning: production `APIEntry.Config` uses Pydantic's deprecated
 class-based configuration. Production files were preserved.
 
-No learned inference, graph service, Gemini generation, human answer adjudication,
-HTTP application load test or live UI regression test passed in this session;
-these remain unrun/incomplete. The reviewer inspected code and documentation,
-not service-backed behavior.
+At the initial pass, learned inference, graph service, Gemini generation, human
+answer adjudication, HTTP application load tests and live UI regressions were
+unrun/incomplete. Subsequent experiments are recorded below. The initial review
+covered code and documentation, not service-backed behavior.
 
 ## Continuation
 
@@ -47,3 +47,24 @@ not service-backed behavior.
   the temporary directory, including error paths after initialization. All 32
   tests passed after the fix. This test uses deterministic test embeddings and
   is not a learned-retrieval measurement.
+- A forced post-construction population failure reproduced a second Windows file
+  lock. The adapter now closes its index before re-raising that failure. All 33
+  tests passed in 26.895 seconds after the fix, including both real Chroma cleanup
+  paths. The full test command required execution outside the sandbox: Windows
+  asyncio's local socketpair blocked inside the sandbox (confirmed by traceback).
+  Test handlers are mocked; no external model calls occur in this suite.
+- All 34 tests passed in 28.083 seconds after adding atomic JSONL checkpoints.
+  The regression verifies that a serialization failure preserves the previous
+  complete predictions and removes temporary files. A learned run had stopped
+  with Windows `OSError` errno 22 while reopening its checkpoint; the underlying
+  OS error was not reproducible with a sibling-file probe. That interrupted run
+  remains explicitly incomplete in `results/learned-02/`.
+- `results/learned-03/` completed all four retrieval configurations, each with 300
+  attempts and zero failures. The 1,200 saved predictions were rescored, exactly
+  matching all aggregate retrieval metrics and paired deltas in `summary.json`.
+  Model revisions and hashes were recorded for both loaded CPU models. Report
+  tables and PNG plots were regenerated from this completed run; the retrieval
+  plot was visually inspected. Twelve two-worker hybrid requests had zero failures.
+- Independent review found no further important issues in the population cleanup
+  fix or atomic checkpoint writer. Earlier setup failures and the interrupted
+  run are retained and excluded from the completed experiment's aggregates.

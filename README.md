@@ -247,25 +247,35 @@ The [evaluation report](docs/evaluation/README.md) documents the repository audi
 100-question synthetic dataset, annotation schema, reusable retrieval ablations,
 performance instrumentation and optional Gemini/human-review workflow.
 
-The recorded offline BM25 run uses 25 fictional endpoint documents and three
-passes over 100 questions. On the 87 answerable questions, Recall@5 is **0.9531**
-and MRR@10 is **0.7541**. Unanswerable/ambiguous questions are excluded from ranking
-metrics. [Saved predictions, tables, confidence intervals and plots](docs/evaluation/results.md)
-support these numbers; they do not measure generated-answer correctness.
+The completed offline run uses 25 fictional endpoint documents and three passes
+over 100 questions (1,200 predictions, zero retrieval errors). Ranking metrics
+cover 87 answerable questions; 13 unanswerable/ambiguous items are excluded.
 
-Dense, hybrid/RRF and cross-encoder experiments remain **incomplete** because model
-weights were unavailable locally. A [BM25 Gemini diagnostic](docs/evaluation/answer-results.md)
+| Configuration | Recall@5 | MRR@10 |
+|---|---:|---:|
+| Dense BGE | 1.0000 | 0.9713 |
+| BM25 | 0.9531 | 0.7541 |
+| Dense + BM25/RRF | 1.0000 | 0.8860 |
+| Hybrid + cross-encoder | 1.0000 | 0.9636 |
+
+On this fixture, adding BM25/RRF lowered MRR@10 versus dense by 0.0852
+(paired 95% bootstrap CI: -0.1360 to -0.0393). Reranking improved the hybrid
+baseline by 0.0776 (CI: +0.0268 to +0.1312), without exceeding dense's observed
+score. [Saved predictions, full metrics, confidence intervals and plots](docs/evaluation/results.md)
+support these findings; they do not measure generated-answer correctness or
+establish production-wide superiority.
+
+A [BM25 Gemini diagnostic](docs/evaluation/answer-results.md)
 produced seven answer texts from 12 questions; five hit quota-related application
 failures. Human quality review, graph and healthy-service HTTP performance remain
-incomplete. No architectural quality improvement
-over a dense baseline has been established. Existing architecture descriptions
+incomplete. Existing architecture descriptions
 are implementation descriptions, not evidence of measured superiority.
 
 ```powershell
 python -m pip install numpy==2.2.6 rank_bm25==0.2.2
 $env:PYTHONHASHSEED = '0'
 python -m evaluation.run --bm25-only --output evaluation/runs/bm25-01 --repeats 3
-python -m evaluation.run --score-only docs/evaluation/results/offline/predictions.jsonl --output evaluation/runs/rescore
+python -m evaluation.run --score-only docs/evaluation/results/learned-03/predictions.jsonl --output evaluation/runs/rescore
 ```
 
 See the report for full dependency setup, tests, learned-control commands,

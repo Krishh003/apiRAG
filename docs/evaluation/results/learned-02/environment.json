@@ -1,0 +1,40 @@
+{
+  "python": "3.10.11",
+  "os": "Windows-10-10.0.26200-SP0",
+  "cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+  "logical_cpus": 20,
+  "packages": {
+    "numpy": "2.2.6",
+    "torch": "2.5.1",
+    "sentence-transformers": "2.7.0",
+    "transformers": "4.46.3",
+    "tokenizers": "0.20.3",
+    "chromadb": "0.5.23",
+    "rank_bm25": "0.2.2",
+    "neo4j": "5.27.0",
+    "google-generativeai": "0.8.3",
+    "matplotlib": null
+  },
+  "source_sha256": {
+    "retrieval/vector_store.py": "e385f1983fe8ed21f4d48ef7d2e5c0c487af8826c20e0e47505c5f32bf5ae927",
+    "retrieval/reranker.py": "6836afd4bf1ffe9b441a8fd1af987d652896bbf0942e1a13f4f18569c7e24c22",
+    "retrieval/graph_store.py": "6bf954148aaf905ff72e237a545ddc8f3ad9ac79d9388912643dfb198c94736f",
+    "models.py": "4b86f02f31c119a9912f5a65bfe84e1a6af014ea60c691520538183595563e38",
+    "main.py": "02c146e43a4549c5e39598a62d8fe1f0c576669ecc518440c7ec48e28c3afd64",
+    "query/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "query/advisory_handler.py": "73914537222da15732a9b0b1a0098dd05e030cf5bc4a52a7dd39f5f3025bcc2e",
+    "query/classifier.py": "56f6453476d3cb981d49a36cc467c7545ff57e52337cb2c9482cd79b3855aa02",
+    "query/comparison_handler.py": "682997afddf2a0c5b4267ea92a820c29ed6c86fa65920a37771477f7af4aec7a",
+    "query/lookup_handler.py": "f9a618c33d1f0527745087a6f3364263b2ee3c95ba67052361e9504ae807308b",
+    "query/planning_handler.py": "18f517e284605ec2157a98d2c854fc9e439a2c593c97a101d3c7a2bbcff5321e",
+    "evaluation/answers.py": "483a07c75246b932594f3cf83889dd87db47fcf3726b04b35f5699fd98083083",
+    "evaluation/server.py": "2d0c31c3b80320b9831162359ddb4b9373e446c451176055ec6205ea7831d226",
+    "evaluation/run.py": "14d92aaade2721397d4d5a66bab107fe96d27591933a02213a983745565d361c",
+    "evaluation/backends.py": "da504376fc340b33a90f66f14fea3432e3285558be0f7806d9dd1f55f1e5581c",
+    "evaluation/dataset.py": "5035ca01a16bdff6da2b795e874ec4db546911091fbdf9d15a403c05c6fd2ffa",
+    "evaluation/metrics.py": "13cedbcef2d290c90db5af6029529df627274df7661d9bd2754b6bbc8a88dd3b",
+    "evaluation/performance.py": "d459af5f27105aabe584400a79da599553b981e6a16d3bf25b59df6bdcf02878"
+  },
+  "ram_bytes": null,
+  "git_head": "ff59d27dc9b276c40b6ae95a0ea0c561a846fa9a"
+}

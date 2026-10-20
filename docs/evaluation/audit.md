@@ -84,8 +84,10 @@ benchmark ML dependencies initially absent. Do not treat setup failures as passe
 | Optional answers | GEMINI_API_KEY and cached local retrieval | sequential, bounded calls; four existing handlers, no scheduler |
 | HTTP end-to-end | separately started isolated app with synthetic corpus | loopback only, bounded concurrency, explicit opt-in |
 
-Downloads require network once; warmed model inference can run offline. This task
-does not read `.env`, ingest existing customer data, or start the production app.
+Downloads require network once; warmed model inference can run offline. Offline
+runners do not read `.env`. Optional service runners can explicitly load its key
+into process memory with `--env-file`; they never save its contents. No runner
+ingests existing customer data or starts the production app's ingestion lifecycle.
 
 ## Permissions and provenance
 

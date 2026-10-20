@@ -1,0 +1,12 @@
+{
+  "status": "interrupted",
+  "stage": "checkpoint",
+  "error": "OSError",
+  "errno": 22,
+  "message": "Windows rejected opening predictions.jsonl for replacement during the second pass.",
+  "saved_predictions": 772,
+  "planned_predictions": 1200,
+  "complete_summary": false,
+  "use_for_final_comparison": false,
+  "followup": "Added atomic checkpoint writes with a regression test; rerun in a fresh directory. No assertion that the underlying Windows failure was reproducible."
+}

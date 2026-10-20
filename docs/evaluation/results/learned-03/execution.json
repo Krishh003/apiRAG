@@ -1,0 +1,23 @@
+{
+  "command": "python -S -u -m evaluation.run --output docs/evaluation/results/learned-03 --repeats 3",
+  "pythonpath": ".venv/Lib/site-packages (absolute path resolved in the invoking shell)",
+  "hf_home": "evaluation/cache/huggingface (absolute path resolved in the invoking shell)",
+  "hf_hub_offline": "1",
+  "transformers_offline": "1",
+  "pythonhashseed": "0",
+  "anonymized_telemetry": "False",
+  "model_downloads": {
+    "BAAI/bge-large-en-v1.5": {
+      "revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+      "safetensors_bytes": 1340616616,
+      "upstream_lfs_sha256_verified_after_download": true
+    },
+    "cross-encoder/ms-marco-MiniLM-L-6-v2": {
+      "revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+      "safetensors_bytes": 90870598,
+      "upstream_lfs_sha256_verified_after_download": true
+    }
+  },
+  "isolation": "No site initialization; explicitly supplied project packages only. Avoids incompatible system torchvision. Model/index setup and first queries excluded from warm measurements.",
+  "provenance": "Source hashes in environment.json reflect the measured working tree, including pre-existing user-staged retrieval edits that are excluded from benchmark commits."
+}

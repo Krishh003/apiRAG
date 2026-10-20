@@ -1,0 +1,27 @@
+{
+  "sha256": {
+    "corpus.jsonl": "e15608cb3cb8fa6841648bcf08e7b8087d4532f0ba31a32ccdac7deeeb34b78f",
+    "questions.jsonl": "194bfb56cb751e4b8222e98de46814a6bb6fb6dba405949f7aa543a80370ed32"
+  },
+  "depth": 10,
+  "branch_depth": 20,
+  "rrf_k": 60,
+  "rrf_missing_rank": "union_size+1 (production)",
+  "repeats": 3,
+  "embedding": "BAAI/bge-large-en-v1.5",
+  "embedding_device": "cpu",
+  "torch_threads": 4,
+  "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "rerank_chars": 512,
+  "requested_embedding_revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+  "requested_reranker_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+  "rerank_max_tokens": 512,
+  "query_seed": 20261020,
+  "bootstrap": {
+    "unit": "query",
+    "resamples": 2000,
+    "seed": 20261020
+  },
+  "cache": "fresh temporary Chroma index; model load/index and first query separate; warm timed requests; no answer cache",
+  "hash_seed": "0"
+}
