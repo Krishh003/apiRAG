@@ -1,0 +1,40 @@
+{
+  "neo4j_server_agent": "Neo4j/2026.09.0",
+  "components": [
+    {
+      "name": "Neo4j Kernel",
+      "versions": [
+        "2026.09.0"
+      ],
+      "edition": "community"
+    },
+    {
+      "name": "Cypher",
+      "versions": [
+        "5",
+        "25"
+      ],
+      "edition": ""
+    }
+  ],
+  "initial_nodes": 0,
+  "server_config": {
+    "listen": "127.0.0.1:17687",
+    "http_enabled": false,
+    "authentication": "disabled for this isolated synthetic instance",
+    "heap_initial": "256m",
+    "heap_max": "512m",
+    "pagecache": "128m",
+    "cypher": "5",
+    "usage_reporting": false
+  },
+  "java": "java version \"25.0.1\" 2025-10-21 LTS\nJava(TM) SE Runtime Environment (build 25.0.1+8-LTS-27)\nJava HotSpot(TM) 64-Bit Server VM (build 25.0.1+8-LTS-27, mixed mode, sharing)",
+  "torch_threads": 4,
+  "python_no_site": true,
+  "embedding_revision": "d4aa6901d3a41ba39fb536a557fa166f842b0e09",
+  "reranker_revision": "233902d25c440f23af6f7d6e94d2946bac0bee0a",
+  "archive_sha256": "020929aded4ba31a3b111918f4a4c85aa4dfb55a866d4bb8f6e593878335626e",
+  "cache": "New Neo4j process and empty database. Traversals timed after ingestion; first traversal included (no separate traversal warmup). OS cache not flushed. Local models cached on disk.",
+  "credentials": "No production credentials read. Authentication disabled only for the dedicated loopback process; dummy driver values were supplied.",
+  "scope": "Equal-budget source coverage and traversal latency only; no Gemini calls or generated-plan scoring."
+}

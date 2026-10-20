@@ -19,7 +19,9 @@ reranked minus hybrid was +0.0776 (CI +0.0268 to +0.1312). Thus this fixture
 supports a reranking gain over hybrid, but does not support adding BM25/RRF to
 improve the dense baseline. Dense, hybrid and reranked Recall@5 all saturate at
 1.0. These are authored synthetic labels, not production quality estimates.
-All four aggregate metric values were identical across the three passes.
+All four metric point estimates were identical across the three passes.
+Per-pass bootstrap bounds can differ with the shuffled query ordering; headline
+intervals use the first pass, and repeats are not pooled as independent queries.
 
 Earlier attempts remain inspectable: `results/offline/` had no cached weights;
 `results/learned/` hit an incompatible system Torchvision import;
@@ -31,8 +33,11 @@ A [BM25 Gemini baseline and HTTP diagnostic](answer-results.md) have now
 run: seven answer texts from 12 questions, with five application failures under
 provider quotas. Model API timing and token usage are recorded; human quality
 scores and costs remain unreported. Four HTTP requests all reached handled quota
-failures, so healthy-service HTTP performance remains incomplete. Graph traversal
-also remains incomplete. The small offline BM25 concurrency experiment tests
+failures, so healthy-service HTTP performance remains incomplete. A separate
+[graph experiment](graph-results.md) completed 12 planning queries: graph-first
+Recall@5 was 0.5417 versus 1.0000 without graph, with equal context budget eight.
+This fallback-keyword experiment does not establish generated-plan correctness.
+The small offline BM25 concurrency experiment tests
 local retrieval only. The completed learned run also tested 12 hybrid requests
 with two workers: zero observed failures, p50 230.491 ms and p95 368.915 ms.
 
@@ -47,6 +52,11 @@ python -m pip install -r requirements.txt -r evaluation/requirements.txt
 python -m evaluation.dataset
 python -m unittest discover -s evaluation/tests -v
 ```
+
+Fresh installation was not exercised on this machine. Evaluation dependency
+pins now reflect the observed core runtime versions; exact measured versions
+remain in each run's environment record. Existing Chroma/Posthog telemetry
+signature warnings and Pydantic deprecations were nonfatal during measurements.
 
 The task environment's `.venv` interpreter points to a missing Miniconda install.
 The recorded full probe instead used the existing Python 3.10-compatible project
@@ -217,8 +227,9 @@ with/without graph at equal context budget 8. Deterministic production fallback
 keywords avoid Gemini extraction and do not use labels. It is a controlled
 context-coverage ablation, not actual generated-plan correctness or the complete
 planning handler (which reranks six vector sources). It leaves its disposable
-database intact for inspection; never use a shared default database. Current
-graph latency and quality are incomplete.
+database intact for inspection; never use a shared default database. The recorded
+experiment, portable server setup, traversal latency and limitations are in
+[graph-results.md](graph-results.md).
 
 Optional answer generation, model API timing/usage and manual review are covered
 in [human-review.md](human-review.md). Prices default to null. No LLM judge is
@@ -231,8 +242,9 @@ forms and six fictional platforms. It is not a production quality estimate.
 Source recall is not factual correctness, abstention, workflow ordering or
 unsupported-claim detection. Independent annotation and answer review remain
 pending; no human agreement statistic is claimed. General advisory knowledge
-must be distinguished from KB grounding. Neo4j and full Gemini
-experiments remain incomplete as listed above.
+must be distinguished from KB grounding. Full Gemini, human adjudication and
+healthy HTTP performance remain incomplete as listed above. Graph results cover
+only the deterministic fallback branch, not LLM keyword extraction or plan quality.
 
 No production source/UI files changed. Unit/integration tests cover metrics,
 qrel integrity, serializer/BM25 parity, reranker truncation, empty/OOV queries,

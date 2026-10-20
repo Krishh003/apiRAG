@@ -47,7 +47,9 @@ def report(run, destination):
               f"failures {concurrency['failures']}/{concurrency['n']} ({concurrency['failure_rate']:.1%}); "
               f"p50 {concurrency['p50_ms']:.3f} ms, p95 {concurrency['p95_ms']:.3f} ms.",
               'This is a small thread-pool retrieval test; it excludes HTTP, Gemini and event-loop contention.', '',
-              '## Experiment status', '', '| Stage | Status | Attempts | Failures | Reason |', '|---|---|---:|---:|---|']
+              '## Retrieval-run status', '',
+              'Statuses below apply to this retrieval run. Separate graph and model-service experiments are linked from the methods.', '',
+              '| Stage | Status | Attempts | Failures | Reason |', '|---|---|---:|---:|---|']
     for name, value in summary['stages'].items():
         lines.append(f"| {name} | {value['status']} | {value.get('attempted', 0)} | {value.get('failed', 0)} | {value.get('reason', '')} |")
     lines += ['', 'See [methods and limitations](README.md), [repository audit](audit.md), and [human review](human-review.md).',

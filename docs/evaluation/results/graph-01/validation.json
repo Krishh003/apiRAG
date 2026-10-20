@@ -1,0 +1,14 @@
+{
+  "api_nodes": 25,
+  "relationship_count": 30,
+  "relationship_types": [
+    "PRECEDES",
+    "REQUIRES"
+  ],
+  "ingestion_matches_fixture": true,
+  "metrics_recomputed_from_saved_ids": true,
+  "planning_queries": 12,
+  "warnings": [
+    "Neo4j UnknownRelationshipTypeWarning: the fixture contains no TRIGGERS edges; production traversal includes that relationship type."
+  ]
+}

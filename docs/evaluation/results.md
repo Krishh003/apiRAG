@@ -46,7 +46,9 @@ Intervals include query sampling uncertainty only; synthetic authoring bias and 
 Local hybrid concurrency: 12 requests, 2 workers; failures 0/12 (0.0%); p50 230.491 ms, p95 368.915 ms.
 This is a small thread-pool retrieval test; it excludes HTTP, Gemini and event-loop contention.
 
-## Experiment status
+## Retrieval-run status
+
+Statuses below apply to this retrieval run. Separate graph and model-service experiments are linked from the methods.
 
 | Stage | Status | Attempts | Failures | Reason |
 |---|---|---:|---:|---|

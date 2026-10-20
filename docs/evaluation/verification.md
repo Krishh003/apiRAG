@@ -68,3 +68,13 @@ covered code and documentation, not service-backed behavior.
 - Independent review found no further important issues in the population cleanup
   fix or atomic checkpoint writer. Earlier setup failures and the interrupted
   run are retained and excluded from the completed experiment's aggregates.
+- The separate Neo4j experiment completed 12 planning queries against a dedicated
+  empty portable server. Verification matched all 25 API nodes and 30 edges to
+  the synthetic fixture and recomputed all metrics/deltas from saved IDs. The
+  absent TRIGGERS relationship-type warning is disclosed. The owned server was
+  stopped and its loopback listener confirmed closed afterward. Generated plans,
+  human answer quality and healthy HTTP performance remain incomplete.
+- Independent review matched the final graph report's metrics, confidence
+  intervals, server settings and q059 example to saved evidence, with no further
+  important findings. Dependency pins were aligned to observed core versions;
+  a fresh environment installation remains explicitly untested.

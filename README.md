@@ -267,8 +267,11 @@ establish production-wide superiority.
 
 A [BM25 Gemini diagnostic](docs/evaluation/answer-results.md)
 produced seven answer texts from 12 questions; five hit quota-related application
-failures. Human quality review, graph and healthy-service HTTP performance remain
-incomplete. Existing architecture descriptions
+failures. A separate [12-query graph ablation](docs/evaluation/graph-results.md)
+measured lower Recall@5 with graph-first context (0.5417 versus 1.0000 without
+graph) under deterministic fallback keywords and equal context budget eight.
+Human quality review and healthy-service HTTP performance remain incomplete.
+Existing architecture descriptions
 are implementation descriptions, not evidence of measured superiority.
 
 ```powershell
