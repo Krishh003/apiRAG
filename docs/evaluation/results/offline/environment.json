@@ -1,0 +1,26 @@
+{
+  "python": "3.10.11",
+  "os": "Windows-10-10.0.26200-SP0",
+  "cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+  "logical_cpus": 20,
+  "packages": {
+    "numpy": "2.2.6",
+    "torch": "2.5.1",
+    "sentence-transformers": "2.7.0",
+    "transformers": "4.46.3",
+    "tokenizers": "0.20.3",
+    "chromadb": "0.5.23",
+    "rank_bm25": "0.2.2",
+    "neo4j": "5.27.0",
+    "google-generativeai": "0.8.3",
+    "matplotlib": "3.10.7"
+  },
+  "source_sha256": {
+    "retrieval/vector_store.py": "e385f1983fe8ed21f4d48ef7d2e5c0c487af8826c20e0e47505c5f32bf5ae927",
+    "retrieval/reranker.py": "6836afd4bf1ffe9b441a8fd1af987d652896bbf0942e1a13f4f18569c7e24c22",
+    "retrieval/graph_store.py": "6bf954148aaf905ff72e237a545ddc8f3ad9ac79d9388912643dfb198c94736f",
+    "models.py": "4b86f02f31c119a9912f5a65bfe84e1a6af014ea60c691520538183595563e38"
+  },
+  "ram_bytes": null,
+  "git_head": "1edd28ed966bac678754273806e0edece3e2b5f2"
+}

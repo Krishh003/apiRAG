@@ -1,6 +1,6 @@
 # API Knowledge Base RAG v2
 
-An internal Retrieval-Augmented Generation system that lets non-technical employees ask plain-English questions about company APIs and receive accurate, actionable answers.
+An internal Retrieval-Augmented Generation system that lets non-technical employees ask plain-English questions about company APIs and receive documentation-based answers and plans.
 
 Built with FastAPI, ChromaDB, Neo4j, and Google Gemini.
 
@@ -25,7 +25,7 @@ The system auto-classifies every question into one of four modes and routes it t
 
 - **Four query modes** with automatic classification (advisory > comparison > planning > lookup)
 - **Hybrid search** combining vector similarity (bge-large-en-v1.5) and BM25 keyword matching via Reciprocal Rank Fusion
-- **Cross-encoder reranking** (ms-marco-MiniLM-L-6-v2) for high-precision source selection
+- **Cross-encoder reranking** (ms-marco-MiniLM-L-6-v2) for source selection
 - **Neo4j graph traversal** for multi-hop API workflow planning
 - **12 platforms** indexed: Twilio, SendGrid, Stripe, Google Maps, WhatsApp, Meta Graph, Instagram, GA4, Meta Ads, Meta Pixel/CAPI, Shopify, AppsFlyer, Firebase
 - **Multiple ingestion methods**: OpenAPI spec parsing, curated JSON definitions, Playwright scraping, file upload (.json, .csv, .txt, .pdf, .md), manual entry
@@ -240,6 +240,35 @@ For a detailed architecture breakdown, see [docs/architecture.md](docs/architect
 | [Contributing](CONTRIBUTING.md) | How to contribute to this project |
 | [Changelog](CHANGELOG.md) | Version history |
 | [Handover](HANDOVER.md) | Developer context and pending work |
+
+## Evaluation and benchmarks
+
+The [evaluation report](docs/evaluation/README.md) documents the repository audit,
+100-question synthetic dataset, annotation schema, reusable retrieval ablations,
+performance instrumentation and optional Gemini/human-review workflow.
+
+The recorded offline BM25 run uses 25 fictional endpoint documents and three
+passes over 100 questions. On the 87 answerable questions, Recall@5 is **0.9531**
+and MRR@10 is **0.7541**. Unanswerable/ambiguous questions are excluded from ranking
+metrics. [Saved predictions, tables, confidence intervals and plots](docs/evaluation/results.md)
+support these numbers; they do not measure generated-answer correctness.
+
+Dense, hybrid/RRF and cross-encoder experiments remain **incomplete** because model
+weights were unavailable locally. Graph, generation, human answer review and HTTP
+end-to-end experiments are also incomplete. No architectural quality improvement
+over a dense baseline has been established. Existing architecture descriptions
+are implementation descriptions, not evidence of measured superiority.
+
+```powershell
+python -m pip install numpy==2.2.6 rank_bm25==0.2.2
+$env:PYTHONHASHSEED = '0'
+python -m evaluation.run --bm25-only --output evaluation/runs/bm25-01 --repeats 3
+python -m evaluation.run --score-only docs/evaluation/results/offline/predictions.jsonl --output evaluation/runs/rescore
+```
+
+See the report for full dependency setup, tests, learned-control commands,
+performance controls, limitations and publication/provenance review. Production
+code and UI are unchanged by the evaluation suite.
 
 ---
 

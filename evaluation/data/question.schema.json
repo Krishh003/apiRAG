@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "API RAG synthetic evaluation question v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "question", "category", "mode", "answerable", "expected_source_ids", "relevance", "required_facts", "reference_answer", "annotation"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^q[0-9]{3}$"},
+    "question": {"type": "string"},
+    "category": {"enum": ["endpoint", "auth_parameters", "planning", "comparison", "advisory", "ambiguous", "absent", "adversarial"]},
+    "mode": {"enum": ["lookup", "planning", "advisory", "comparison"]},
+    "answerable": {"type": "boolean"},
+    "expected_source_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "relevance": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1, "maximum": 2}},
+    "required_facts": {"type": "array", "items": {"type": "string"}},
+    "reference_answer": {"type": "string", "minLength": 1},
+    "annotation": {"type": "string"}
+  },
+  "allOf": [{"if": {"properties": {"answerable": {"const": false}}}, "then": {"properties": {"relevance": {"maxProperties": 0}, "expected_source_ids": {"maxItems": 0}}}, "else": {"properties": {"relevance": {"minProperties": 1}, "required_facts": {"minItems": 1}}}}]
+}
