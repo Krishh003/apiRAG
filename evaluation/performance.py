@@ -6,6 +6,7 @@ import os
 import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
@@ -91,8 +92,9 @@ def graph_test(output):
     output.mkdir(parents=True, exist_ok=True)
     try:
         _, setup_ms = timed(graph.upsert_entries, [APIEntry(**doc['entry']) for doc in docs])
-        with tempfile.TemporaryDirectory(prefix='apirag-graph-evaluation-') as temporary:
+        with tempfile.TemporaryDirectory(prefix='apirag-graph-evaluation-') as temporary, ExitStack() as cleanup:
             backend = ProductionBackend(docs, temporary)
+            cleanup.callback(backend.close)
             backend.load_reranker()
             by_name = {doc['entry']['name']: doc['id'] for doc in docs}
             rows, baseline, treatment = [], [], []

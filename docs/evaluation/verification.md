@@ -42,3 +42,8 @@ not service-backed behavior.
   HTTP route, suppression of its automatic dotenv loading, expanded source hashes
   and generation-setting records for future runs. Earlier service manifests remain
   explicitly limited; they were not retroactively relabeled as complete.
+- A real Chroma lifecycle test reproduced Windows `WinError 32` on temporary HNSW
+  files. Evaluation adapters now stop their owned Chroma system before removing
+  the temporary directory, including error paths after initialization. All 32
+  tests passed after the fix. This test uses deterministic test embeddings and
+  is not a learned-retrieval measurement.

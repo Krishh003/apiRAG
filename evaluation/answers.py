@@ -5,6 +5,7 @@ import hashlib
 import os
 import tempfile
 import time
+from contextlib import ExitStack
 from pathlib import Path
 
 from evaluation.backends import BM25Backend, ProductionBackend, document_text, timed
@@ -203,9 +204,10 @@ def generate(output, limit=12, prices=None, retrieval='production', api_interval
     selected += [q for q in questions if not q['answerable'] and q not in selected]
     selected = selected[:limit]
     calls, rows = [], []
-    with tempfile.TemporaryDirectory(prefix='apirag-answer-evaluation-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='apirag-answer-evaluation-') as temporary, ExitStack() as cleanup:
         backend = BM25AnswerBackend(docs) if retrieval == 'bm25' else ProductionBackend(docs, temporary)
         if retrieval == 'production':
+            cleanup.callback(backend.close)
             backend.load_reranker()
         classifier, handlers = build_components(backend, key, calls, prices, api_interval_seconds)
         for q in selected:

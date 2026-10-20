@@ -64,6 +64,10 @@ class ProductionBackend:
         self.store._rebuild_bm25()
         self.reranker = None
 
+    def close(self):
+        # Chroma 0.5 keeps HNSW files open on Windows until its owned system stops.
+        self.store._client._system.stop()
+
     def load_reranker(self):
         from retrieval.reranker import Reranker
 

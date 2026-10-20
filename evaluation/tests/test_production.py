@@ -1,12 +1,33 @@
 """Real serialization/BM25/reranker integration; learned weights not required."""
 
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
-from evaluation.backends import BM25Backend, document_text
+from evaluation.backends import BM25Backend, ProductionBackend, document_text
 from evaluation.dataset import load_dataset
 
 
 class ProductionParityTests(unittest.TestCase):
+    def test_real_chroma_index_can_be_removed_after_search(self):
+        import numpy as np
+        from chromadb.utils import embedding_functions
+
+        class FixedEmbeddings:
+            def encode(self, documents, **kwargs):
+                return np.asarray([[1., .5, .25] for _ in documents])
+
+        docs, _ = load_dataset()
+        cache = embedding_functions.SentenceTransformerEmbeddingFunction.models
+        with patch.dict(cache, {'BAAI/bge-large-en-v1.5': FixedEmbeddings()}):
+            with tempfile.TemporaryDirectory(prefix='apirag-cleanup-test-') as directory:
+                backend = ProductionBackend(docs, directory)
+                self.assertTrue(backend.dense('SandboxPay payment'))
+                self.assertTrue(backend.hybrid('SandboxPay payment'))
+                backend.close()
+            self.assertFalse(Path(directory).exists())
+
     def test_document_and_bm25_match_production(self):
         from models import APIEntry
         from retrieval.vector_store import VectorStore, _entry_to_document

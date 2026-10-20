@@ -4,7 +4,7 @@ import argparse
 import os
 import tempfile
 import time
-from contextlib import asynccontextmanager
+from contextlib import ExitStack, asynccontextmanager
 from pathlib import Path
 from unittest.mock import patch
 
@@ -37,9 +37,10 @@ def create_app(output, retrieval='production', api_interval_seconds=15):
         if (output / 'requests.jsonl').exists():
             raise ValueError('Use a fresh output directory')
         docs, _ = load_dataset()
-        with tempfile.TemporaryDirectory(prefix='apirag-http-evaluation-') as temporary:
+        with tempfile.TemporaryDirectory(prefix='apirag-http-evaluation-') as temporary, ExitStack() as cleanup:
             backend = BM25AnswerBackend(docs) if retrieval == 'bm25' else ProductionBackend(docs, temporary)
             if retrieval == 'production':
+                cleanup.callback(backend.close)
                 backend.load_reranker()
             classifier, handlers = build_components(backend, key, calls, api_interval_seconds=api_interval_seconds)
             values = {'vector_store': backend.store, 'classifier': classifier,

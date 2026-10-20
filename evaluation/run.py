@@ -12,6 +12,7 @@ import tempfile
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -153,7 +154,7 @@ def evaluate(docs, questions, output, bm25_only=False, repeats=1, concurrent_req
     lexical, cold_bm25 = timed(BM25Backend, docs)
     cold = {'bm25_index_ms': cold_bm25}
     model_manifest = {}
-    with tempfile.TemporaryDirectory(prefix='apirag-evaluation-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='apirag-evaluation-') as temporary, ExitStack() as cleanup:
         backend = None
         if not bm25_only:
             try:
@@ -162,6 +163,8 @@ def evaluate(docs, questions, output, bm25_only=False, repeats=1, concurrent_req
                 torch.set_num_threads(4)
                 torch.manual_seed(20261020)
                 backend, cold['dense_model_and_index_ms'] = timed(ProductionBackend, docs, Path(temporary))
+                if hasattr(backend, 'close'):
+                    cleanup.callback(backend.close)
                 stages['dense'] = stages['hybrid'] = {'status': 'complete'}
             except (ImportError, OSError, RuntimeError, ValueError) as exc:
                 # Save only error class: external messages can contain credentials/paths.
